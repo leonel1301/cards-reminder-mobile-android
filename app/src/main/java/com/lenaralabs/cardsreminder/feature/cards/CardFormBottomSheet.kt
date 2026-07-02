@@ -3,6 +3,7 @@ package com.lenaralabs.cardsreminder.feature.cards
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -26,7 +27,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,18 +68,28 @@ fun CardFormBottomSheet(
 ) {
     val colors = MaterialTheme.cardsReminder
     val isEditing = mode is CardsSheet.Edit
+    val isCreating = mode is CardsSheet.Create
     val title = if (isEditing) {
         stringResource(R.string.screen_edit_card_title)
     } else {
         stringResource(R.string.screen_new_card_title)
     }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCreating)
+
+    if (isCreating) {
+        LaunchedEffect(Unit) {
+            sheetState.expand()
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        sheetState = sheetState,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 24.dp),

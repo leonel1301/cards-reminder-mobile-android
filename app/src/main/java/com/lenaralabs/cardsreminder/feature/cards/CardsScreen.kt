@@ -82,7 +82,7 @@ fun CardsScreen(
             )
 
             PullToRefreshBox(
-                isRefreshing = state.isSaving && state.cards.isNotEmpty(),
+                isRefreshing = state.isPullRefreshing,
                 onRefresh = viewModel::refresh,
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -113,7 +113,7 @@ fun CardsScreen(
                         }
                     }
 
-                    if (state.cards.isEmpty() && !state.isLoading) {
+                    if (state.cards.isEmpty() && !state.isInitialLoading) {
                         item {
                             CardsEmptyState()
                         }
@@ -182,7 +182,7 @@ fun CardsScreen(
                     }
                 }
 
-                if (state.isLoading) {
+                if (state.isInitialLoading && state.cards.isEmpty()) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
             }

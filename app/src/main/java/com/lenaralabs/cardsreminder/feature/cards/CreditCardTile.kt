@@ -94,29 +94,31 @@ fun CreditCardTile(
             ) {
                 ChipView()
 
-                Spacer(modifier = Modifier.weight(1f))
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 10.dp, end = 8.dp),
+                ) {
+                    Text(
+                        text = card.name,
+                        color = contentColor,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        maxLines = 2,
+                    )
+                    card.issuer?.takeIf { it.isNotBlank() }?.let { issuer ->
+                        Text(
+                            text = issuer,
+                            color = secondaryColor,
+                            fontSize = 12.sp,
+                        )
+                    }
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = card.name,
-                            color = contentColor,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            maxLines = 2,
-                        )
-                        card.issuer?.takeIf { it.isNotBlank() }?.let { issuer ->
-                            Text(
-                                text = issuer,
-                                color = secondaryColor,
-                                fontSize = 12.sp,
-                            )
-                        }
-                    }
-
                     if (card.isActive && onMarkPaid != null) {
                         if (isPaidThisCycle) {
                             PaidIndicator()
@@ -130,12 +132,13 @@ fun CreditCardTile(
                     Box {
                         IconButton(
                             onClick = { onMenuExpandedChange(true) },
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(28.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
                                 contentDescription = stringResource(R.string.action_more_options),
                                 tint = contentColor,
+                                modifier = Modifier.size(18.dp),
                             )
                         }
 
@@ -300,24 +303,26 @@ private fun PayActionButton(onClick: () -> Unit) {
     val colors = MaterialTheme.cardsReminder
     Row(
         modifier = Modifier
+            .height(26.dp)
             .clip(RoundedCornerShape(50))
             .background(Color.White.copy(alpha = 0.95f))
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(
             imageVector = Icons.Filled.Verified,
             contentDescription = null,
             tint = colors.emeraldStateForeground,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(12.dp),
         )
         Text(
             text = stringResource(R.string.action_pay),
             color = colors.emeraldStateForeground,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
+            lineHeight = 11.sp,
         )
     }
 }
@@ -327,23 +332,25 @@ private fun PaidIndicator() {
     val colors = MaterialTheme.cardsReminder
     Row(
         modifier = Modifier
+            .height(26.dp)
             .clip(RoundedCornerShape(50))
             .background(colors.emeraldStateBackground.copy(alpha = 0.95f))
-            .padding(horizontal = 9.dp, vertical = 5.dp),
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Icon(
             imageVector = Icons.Filled.Check,
             contentDescription = null,
             tint = colors.emeraldStateForeground,
-            modifier = Modifier.size(12.dp),
+            modifier = Modifier.size(11.dp),
         )
         Text(
             text = stringResource(R.string.card_status_paid),
             color = colors.emeraldStateForeground,
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
+            lineHeight = 10.sp,
         )
     }
 }

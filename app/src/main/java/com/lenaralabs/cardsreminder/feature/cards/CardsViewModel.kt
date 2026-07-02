@@ -75,7 +75,12 @@ data class CardsUiState(
     val showRemindersLaterInfo: Boolean = false,
     val showLastFourHelp: Boolean = false,
     val pendingEditFromPayments: ApiCard? = null,
-)
+    val initialLoadComplete: Boolean = false,
+    val isPullRefreshing: Boolean = false,
+) {
+    val isInitialLoading: Boolean
+        get() = !initialLoadComplete && isSaving
+}
 
 class CardsViewModel(
     private val cardsRepository: CardsRepository,
@@ -95,12 +100,17 @@ class CardsViewModel(
     private val showRemindersLaterInfo = MutableStateFlow(false)
     private val showLastFourHelp = MutableStateFlow(false)
     private val pendingEditFromPayments = MutableStateFlow<ApiCard?>(null)
+    private val initialLoadComplete = MutableStateFlow(false)
+    private val isPullRefreshing = MutableStateFlow(false)
 
     private val _uiState = MutableStateFlow(CardsUiState())
     val uiState: StateFlow<CardsUiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        viewModelScope.launch {
+            loadInitialData()
+            initialLoadComplete.value = true
+        }
         viewModelScope.launch {
             combine(
                 combine(
@@ -135,10 +145,12 @@ class CardsViewModel(
                     showRemindersLaterInfo,
                     showLastFourHelp,
                     pendingEditFromPayments,
-                ) { remindersPrompt, remindersLater, lastFourHelp, editFromPayments ->
-                    UiSnapshot3(remindersPrompt, remindersLater, lastFourHelp, editFromPayments)
+                    initialLoadComplete,
+                ) { remindersPrompt, remindersLater, lastFourHelp, editFromPayments, loadComplete ->
+                    UiSnapshot3(remindersPrompt, remindersLater, lastFourHelp, editFromPayments, loadComplete)
                 },
-            ) { data, ui1, ui2, ui3 ->
+                isPullRefreshing,
+            ) { data, ui1, ui2, ui3, pullRefreshing ->
                 buildUiState(
                     cards = data.cards,
                     cardsLoading = data.cardsLoading,
@@ -159,10 +171,29 @@ class CardsViewModel(
                     remindersLater = ui3.remindersLater,
                     lastFourHelp = ui3.lastFourHelp,
                     editFromPayments = ui3.editFromPayments,
+                    initialLoadComplete = ui3.initialLoadComplete,
+                    isPullRefreshing = pullRefreshing,
                 )
             }.collect { state ->
                 _uiState.value = state
             }
+        }
+    }
+
+    private suspend fun loadInitialData() {
+        coroutineScope {
+            val cardsJob = async {
+                if (cardsRepository.cards.value.isEmpty()) {
+                    cardsRepository.fetchCards(silentUnlessEmpty = false)
+                }
+            }
+            val dashboardJob = async {
+                if (!paymentsRepository.hasCachedDashboard) {
+                    paymentsRepository.fetchDashboard(silentUnlessEmpty = false)
+                }
+            }
+            cardsJob.await()
+            dashboardJob.await()
         }
     }
 
@@ -195,6 +226,7 @@ class CardsViewModel(
         val remindersLater: Boolean,
         val lastFourHelp: Boolean,
         val editFromPayments: ApiCard?,
+        val initialLoadComplete: Boolean,
     )
 
     private fun buildUiState(
@@ -217,6 +249,8 @@ class CardsViewModel(
         remindersLater: Boolean,
         lastFourHelp: Boolean,
         editFromPayments: ApiCard?,
+        initialLoadComplete: Boolean,
+        isPullRefreshing: Boolean,
     ): CardsUiState {
         val visibleError = when {
             cardsError != null && cards.isEmpty() -> cardsError
@@ -243,6 +277,8 @@ class CardsViewModel(
             showRemindersLaterInfo = remindersLater,
             showLastFourHelp = lastFourHelp,
             pendingEditFromPayments = editFromPayments,
+            initialLoadComplete = initialLoadComplete,
+            isPullRefreshing = isPullRefreshing,
         )
     }
 
@@ -250,11 +286,16 @@ class CardsViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            coroutineScope {
-                val cardsJob = async { cardsRepository.fetchCards(silentUnlessEmpty = false) }
-                val dashboardJob = async { paymentsRepository.fetchDashboard(silentUnlessEmpty = false) }
-                cardsJob.await()
-                dashboardJob.await()
+            isPullRefreshing.value = true
+            try {
+                coroutineScope {
+                    val cardsJob = async { cardsRepository.fetchCards(silentUnlessEmpty = false) }
+                    val dashboardJob = async { paymentsRepository.fetchDashboard(silentUnlessEmpty = false) }
+                    cardsJob.await()
+                    dashboardJob.await()
+                }
+            } finally {
+                isPullRefreshing.value = false
             }
         }
     }

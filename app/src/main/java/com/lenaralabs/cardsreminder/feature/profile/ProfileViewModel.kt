@@ -64,6 +64,8 @@ data class ProfileUiState(
     val feedbackFormState: FeedbackFormState = FeedbackFormState(),
     val showDiscardOwnerDialog: Boolean = false,
     val showDiscardFeedbackDialog: Boolean = false,
+    val initialLoadComplete: Boolean = false,
+    val isPullRefreshing: Boolean = false,
 )
 
 class ProfileViewModel(
@@ -82,6 +84,8 @@ class ProfileViewModel(
     private val feedbackFormState = MutableStateFlow(FeedbackFormState())
     private val showDiscardOwnerDialog = MutableStateFlow(false)
     private val showDiscardFeedbackDialog = MutableStateFlow(false)
+    private val initialLoadComplete = MutableStateFlow(false)
+    private val isPullRefreshing = MutableStateFlow(false)
 
     val feedbacks = feedbackRepository.feedbacks
 
@@ -89,7 +93,10 @@ class ProfileViewModel(
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        refresh(silentOwners = true)
+        viewModelScope.launch {
+            loadInitialData(silentOwners = true)
+            initialLoadComplete.value = true
+        }
         viewModelScope.launch {
             combine(
                 combine(
@@ -119,7 +126,13 @@ class ProfileViewModel(
                 ) { deleteFeedback, ownerForm, feedbackForm, discardOwner, discardFeedback ->
                     ProfileUiSnapshot2(deleteFeedback, ownerForm, feedbackForm, discardOwner, discardFeedback)
                 },
-            ) { data, ui1, ui2 ->
+                combine(
+                    initialLoadComplete,
+                    isPullRefreshing,
+                ) { loadComplete, pullRefreshing ->
+                    loadComplete to pullRefreshing
+                },
+            ) { data, ui1, ui2, loadState ->
                 ProfileUiState(
                     user = data.user,
                     owners = data.owners,
@@ -135,8 +148,27 @@ class ProfileViewModel(
                     feedbackFormState = ui2.feedbackForm,
                     showDiscardOwnerDialog = ui2.discardOwner,
                     showDiscardFeedbackDialog = ui2.discardFeedback,
+                    initialLoadComplete = loadState.first,
+                    isPullRefreshing = loadState.second,
                 )
             }.collect { _uiState.value = it }
+        }
+    }
+
+    private suspend fun loadInitialData(silentOwners: Boolean) {
+        coroutineScope {
+            val profileJob = async {
+                if (userRepository.user.value == null) {
+                    userRepository.fetchProfile()
+                }
+            }
+            val ownersJob = async {
+                if (!silentOwners || ownersRepository.owners.value.isEmpty()) {
+                    ownersRepository.fetchOwners()
+                }
+            }
+            profileJob.await()
+            ownersJob.await()
         }
     }
 
@@ -166,15 +198,20 @@ class ProfileViewModel(
 
     fun refresh(silentOwners: Boolean = false) {
         viewModelScope.launch {
-            coroutineScope {
-                val profileJob = async { userRepository.fetchProfile() }
-                val ownersJob = async {
-                    if (!silentOwners || ownersRepository.owners.value.isEmpty()) {
-                        ownersRepository.fetchOwners()
+            isPullRefreshing.value = true
+            try {
+                coroutineScope {
+                    val profileJob = async { userRepository.fetchProfile() }
+                    val ownersJob = async {
+                        if (!silentOwners || ownersRepository.owners.value.isEmpty()) {
+                            ownersRepository.fetchOwners()
+                        }
                     }
+                    profileJob.await()
+                    ownersJob.await()
                 }
-                profileJob.await()
-                ownersJob.await()
+            } finally {
+                isPullRefreshing.value = false
             }
         }
     }

@@ -21,7 +21,12 @@ data class CalendarUiState(
     val activeCards: List<ApiCard> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val initialLoadComplete: Boolean = false,
+    val isPullRefreshing: Boolean = false,
 ) {
+    val isInitialLoading: Boolean
+        get() = !initialLoadComplete && isLoading
+
     val daysInMonth: Int
         get() = CalendarBillingLogic.daysInMonth(year, month)
 
@@ -51,21 +56,31 @@ class CalendarViewModel(
 
     private val displayedMonth = MutableStateFlow(initialYear to initialMonth)
     private val selection = MutableStateFlow<CalendarSelection?>(null)
+    private val initialLoadComplete = MutableStateFlow(false)
+    private val isPullRefreshing = MutableStateFlow(false)
 
     val uiState: StateFlow<CalendarUiState> = combine(
-        displayedMonth,
-        selection,
-        cardsRepository.cards,
-        cardsRepository.isLoading,
-        cardsRepository.errorMessage,
-    ) { monthPair, currentSelection, cards, isLoading, errorMessage ->
+        combine(
+            displayedMonth,
+            selection,
+            cardsRepository.cards,
+            cardsRepository.isLoading,
+            cardsRepository.errorMessage,
+        ) { monthPair, currentSelection, cards, isLoading, errorMessage ->
+            CalendarDataSnapshot(monthPair, currentSelection, cards, isLoading, errorMessage)
+        },
+        initialLoadComplete,
+        isPullRefreshing,
+    ) { data, loadComplete, pullRefreshing ->
         CalendarUiState(
-            year = monthPair.first,
-            month = monthPair.second,
-            selection = currentSelection,
-            activeCards = cards.filter { it.isActive },
-            isLoading = isLoading,
-            errorMessage = errorMessage,
+            year = data.monthPair.first,
+            month = data.monthPair.second,
+            selection = data.selection,
+            activeCards = data.cards.filter { it.isActive },
+            isLoading = data.isLoading,
+            errorMessage = data.errorMessage,
+            initialLoadComplete = loadComplete,
+            isPullRefreshing = pullRefreshing,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -75,13 +90,21 @@ class CalendarViewModel(
 
     init {
         viewModelScope.launch {
-            cardsRepository.fetchCards()
+            if (cardsRepository.cards.value.isEmpty()) {
+                cardsRepository.fetchCards(silentUnlessEmpty = false)
+            }
+            initialLoadComplete.value = true
         }
     }
 
     fun refresh() {
         viewModelScope.launch {
-            cardsRepository.fetchCards(silentUnlessEmpty = false)
+            isPullRefreshing.value = true
+            try {
+                cardsRepository.fetchCards(silentUnlessEmpty = false)
+            } finally {
+                isPullRefreshing.value = false
+            }
         }
     }
 
@@ -207,4 +230,12 @@ class CalendarViewModel(
             return CalendarViewModel(cardsRepository) as T
         }
     }
+
+    private data class CalendarDataSnapshot(
+        val monthPair: Pair<Int, Int>,
+        val selection: CalendarSelection?,
+        val cards: List<ApiCard>,
+        val isLoading: Boolean,
+        val errorMessage: String?,
+    )
 }

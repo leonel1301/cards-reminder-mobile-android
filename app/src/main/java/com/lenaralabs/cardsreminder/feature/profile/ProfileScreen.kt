@@ -246,8 +246,7 @@ fun ProfileScreen(
     }
 
     PullToRefreshBox(
-        isRefreshing = (state.isLoadingProfile || state.isLoadingOwners) &&
-            (state.user != null || state.owners.isNotEmpty()),
+        isRefreshing = state.isPullRefreshing,
         onRefresh = { viewModel.refresh() },
         modifier = modifier.fillMaxSize(),
     ) {

@@ -65,7 +65,7 @@ fun CalendarScreen(
         )
 
         PullToRefreshBox(
-            isRefreshing = state.isLoading && state.activeCards.isNotEmpty(),
+            isRefreshing = state.isPullRefreshing,
             onRefresh = viewModel::refresh,
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -97,7 +97,7 @@ fun CalendarScreen(
 
                     HorizontalDivider(color = colors.defaultBorder)
 
-                    if (state.activeCards.isEmpty() && !state.isLoading) {
+                    if (state.activeCards.isEmpty() && !state.isInitialLoading) {
                         CalendarEmptyState()
                     } else {
                         CalendarGrid(
@@ -119,7 +119,7 @@ fun CalendarScreen(
                     }
                 }
 
-                if (state.isLoading && state.activeCards.isEmpty()) {
+                if (state.isInitialLoading && state.activeCards.isEmpty()) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
                     )
