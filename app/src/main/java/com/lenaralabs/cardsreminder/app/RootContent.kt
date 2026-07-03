@@ -1,8 +1,6 @@
 package com.lenaralabs.cardsreminder.app
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +27,7 @@ import com.lenaralabs.cardsreminder.feature.auth.PostLoginSetupScreen
 import com.lenaralabs.cardsreminder.feature.auth.SignInScreen
 import com.lenaralabs.cardsreminder.feature.onboarding.OnboardingScreen
 import com.lenaralabs.cardsreminder.feature.onboarding.SplashScreen
+import com.lenaralabs.cardsreminder.ui.animation.AppMotion
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 import java.util.UUID
 
@@ -90,7 +89,7 @@ fun RootContent(
         modifier = modifier
             .fillMaxSize()
             .background(colors.appBackground),
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        transitionSpec = { AppMotion.navFadeIn() togetherWith AppMotion.navFadeOut() },
         label = "rootContent",
     ) { target ->
         when (target) {

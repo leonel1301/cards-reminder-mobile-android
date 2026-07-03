@@ -1,6 +1,20 @@
 package com.lenaralabs.cardsreminder.feature.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,10 +44,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -46,13 +65,19 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsTracker
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.auth.AuthRepository
 import com.lenaralabs.cardsreminder.ui.components.AuthGradientBackground
 import com.lenaralabs.cardsreminder.ui.components.PoweredByLenaraFooter
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsScreens
+import com.lenaralabs.cardsreminder.core.analytics.TrackScreen
+import com.lenaralabs.cardsreminder.ui.animation.AppMotion
+import com.lenaralabs.cardsreminder.ui.animation.pressScaleEffect
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +89,7 @@ fun SignInScreen(
         ),
     ),
 ) {
+    TrackScreen(AnalyticsScreens.SIGN_IN)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
     val isDarkTheme = isSystemInDarkTheme()
@@ -72,6 +98,50 @@ fun SignInScreen(
     val noGoogleAccountMessage = stringResource(R.string.error_no_google_account)
     val signInFailedMessage = stringResource(R.string.error_sign_in_failed)
     val credentialManager = remember { CredentialManager.create(context) }
+    val googleButtonInteraction = remember { MutableInteractionSource() }
+
+    var headerVisible by remember { mutableStateOf(false) }
+    var bodyVisible by remember { mutableStateOf(false) }
+    var footerVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        headerVisible = true
+        delay(140)
+        bodyVisible = true
+        delay(180)
+        footerVisible = true
+    }
+
+    val headerOffset by animateFloatAsState(
+        targetValue = if (headerVisible) 0f else 28f,
+        animationSpec = AppMotion.signInSpring,
+        label = "headerOffset",
+    )
+    val headerAlpha by animateFloatAsState(
+        targetValue = if (headerVisible) 1f else 0f,
+        animationSpec = AppMotion.signInSpring,
+        label = "headerAlpha",
+    )
+    val bodyOffset by animateFloatAsState(
+        targetValue = if (bodyVisible) 0f else 22f,
+        animationSpec = AppMotion.signInSpring,
+        label = "bodyOffset",
+    )
+    val bodyAlpha by animateFloatAsState(
+        targetValue = if (bodyVisible) 1f else 0f,
+        animationSpec = AppMotion.signInSpring,
+        label = "bodyAlpha",
+    )
+    val footerAlpha by animateFloatAsState(
+        targetValue = if (footerVisible) 1f else 0f,
+        animationSpec = tween(450, easing = FastOutSlowInEasing),
+        label = "footerAlpha",
+    )
+    val loadingAlpha by animateFloatAsState(
+        targetValue = if (uiState.isSigningIn) 1f else 0f,
+        animationSpec = tween(AppMotion.OVERLAY_DURATION_MS, easing = FastOutSlowInEasing),
+        label = "loadingAlpha",
+    )
 
     AuthGradientBackground(
         isDarkTheme = isDarkTheme,
@@ -87,52 +157,69 @@ fun SignInScreen(
 
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .alpha(headerAlpha),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (!isDarkTheme) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(28.dp),
-                        color = colors.headerSurface,
-                        tonalElevation = 2.dp,
-                    ) {
-                        SignInBrandContent()
+                Box(modifier = Modifier.offset(y = headerOffset.dp)) {
+                    if (!isDarkTheme) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(28.dp),
+                            color = colors.headerSurface,
+                            tonalElevation = 2.dp,
+                        ) {
+                            SignInBrandContent()
+                        }
+                    } else {
+                        SignInBrandContent(
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
-                } else {
-                    SignInBrandContent(
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(32.dp))
-
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .offset(y = bodyOffset.dp)
+                        .alpha(bodyAlpha)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.sign_in_prompt),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                textAlign = TextAlign.Center,
-                            )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.sign_in_prompt),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
 
-                            Text(
-                                text = stringResource(R.string.sign_in_choose_method),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.secondaryText,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.sign_in_choose_method),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.secondaryText,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
 
+                    AnimatedVisibility(
+                        visible = uiState.errorMessage != null,
+                        enter = slideInVertically { -it / 2 } + fadeIn(tween(AppMotion.BASE_DURATION_MS)),
+                        exit = slideOutVertically { -it / 2 } + fadeOut(tween(AppMotion.OVERLAY_DURATION_MS)),
+                    ) {
                         uiState.errorMessage?.let { message ->
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
@@ -156,38 +243,41 @@ fun SignInScreen(
                                 }
                             }
                         }
+                    }
 
-                        Button(
-                            onClick = {
-                                viewModel.signInWithGoogle(
-                                    context = context,
-                                    credentialManager = credentialManager,
-                                    webClientId = webClientId,
-                                    noGoogleAccountMessage = noGoogleAccountMessage,
-                                    signInFailedMessage = signInFailedMessage,
-                                )
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            enabled = !uiState.isSigningIn,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colors.cardSurface,
-                                contentColor = if (isDarkTheme) Color.White else Color.Black,
-                            ),
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.google_g),
-                                contentDescription = null,
-                                modifier = Modifier.size(56.dp),
+                    Button(
+                        onClick = {
+                            viewModel.signInWithGoogle(
+                                context = context,
+                                credentialManager = credentialManager,
+                                webClientId = webClientId,
+                                noGoogleAccountMessage = noGoogleAccountMessage,
+                                signInFailedMessage = signInFailedMessage,
                             )
-                            Spacer(modifier = Modifier.size(12.dp))
-                            Text(
-                                text = stringResource(R.string.sign_in_continue_google),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .pressScaleEffect(googleButtonInteraction),
+                        enabled = !uiState.isSigningIn,
+                        interactionSource = googleButtonInteraction,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.cardSurface,
+                            contentColor = if (isDarkTheme) Color.White else Color.Black,
+                        ),
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.google_g),
+                            contentDescription = null,
+                            modifier = Modifier.size(56.dp),
+                        )
+                        Spacer(modifier = Modifier.size(12.dp))
+                        Text(
+                            text = stringResource(R.string.sign_in_continue_google),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
                 }
             }
 
@@ -195,7 +285,8 @@ fun SignInScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 16.dp)
+                    .alpha(footerAlpha),
             )
         }
     }
@@ -208,7 +299,10 @@ fun SignInScreen(
                 dismissOnClickOutside = false,
             ),
         ) {
-            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+            ElevatedCard(
+                modifier = Modifier.alpha(loadingAlpha),
+                shape = RoundedCornerShape(20.dp),
+            ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -243,6 +337,17 @@ private fun SignInBrandContent(
     }
     val iconTint = if (isDarkTheme) MaterialTheme.cardsReminder.primaryAction else Color.White
 
+    val infiniteTransition = rememberInfiniteTransition(label = "signInLogoBreath")
+    val logoBreath by infiniteTransition.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "logoBreath",
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -251,7 +356,9 @@ private fun SignInBrandContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Surface(
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier
+                .size(72.dp)
+                .scale(logoBreath),
             shape = MaterialTheme.shapes.extraLarge,
             color = iconContainerColor,
         ) {
@@ -284,10 +391,11 @@ private fun SignInBrandContent(
 @Preview(showBackground = true)
 @Composable
 private fun SignInScreenPreview() {
+    val context = LocalContext.current
     CardsreminderTheme {
         SignInScreen(
             viewModel = remember {
-                SignInViewModel(AuthRepository())
+                SignInViewModel(AuthRepository(AnalyticsTracker(context)))
             },
         )
     }

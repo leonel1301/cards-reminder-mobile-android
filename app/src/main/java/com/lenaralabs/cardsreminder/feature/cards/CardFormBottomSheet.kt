@@ -24,7 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -33,7 +33,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.model.ApiOwner
+import com.lenaralabs.cardsreminder.ui.components.AppSwitch
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +54,8 @@ fun CardFormBottomSheet(
     formState: CardFormState,
     owners: List<ApiOwner>,
     isSaving: Boolean,
-    onDismissRequest: () -> Unit,
+    onDismissRequest: () -> Boolean,
+    onSheetDismissed: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
     onNameChange: (String) -> Unit,
@@ -68,22 +72,29 @@ fun CardFormBottomSheet(
 ) {
     val colors = MaterialTheme.cardsReminder
     val isEditing = mode is CardsSheet.Edit
-    val isCreating = mode is CardsSheet.Create
     val title = if (isEditing) {
         stringResource(R.string.screen_edit_card_title)
     } else {
         stringResource(R.string.screen_new_card_title)
     }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isCreating)
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { target ->
+            if (target == SheetValue.Hidden) {
+                onDismissRequest()
+            } else {
+                true
+            }
+        },
+    )
 
-    if (isCreating) {
-        LaunchedEffect(Unit) {
-            sheetState.expand()
-        }
+    LaunchedEffect(Unit) {
+        sheetState.expand()
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = onSheetDismissed,
         sheetState = sheetState,
     ) {
         Column(
@@ -101,7 +112,13 @@ fun CardFormBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onDismissRequest) {
+                TextButton(
+                    onClick = {
+                        if (onDismissRequest()) {
+                            scope.launch { sheetState.hide() }
+                        }
+                    },
+                ) {
                     Text(stringResource(R.string.action_cancel))
                 }
                 Text(
@@ -216,7 +233,7 @@ fun CardFormBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(stringResource(R.string.field_card_active))
-                        Switch(
+                        AppSwitch(
                             checked = formState.isActive,
                             onCheckedChange = onActiveChange,
                         )

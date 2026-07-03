@@ -23,27 +23,46 @@ data class CalendarUiState(
     val errorMessage: String? = null,
     val initialLoadComplete: Boolean = false,
     val isPullRefreshing: Boolean = false,
+    val daysInMonth: Int = CalendarBillingLogic.daysInMonth(year, month),
+    val calendarDays: List<Int?> = CalendarBillingLogic.generateCalendarDays(year, month),
+    val monthYearTitle: String = CalendarBillingLogic.formatMonthYear(year, month),
+    val relevantPeriods: List<BillingPeriodInstance> = emptyList(),
+    val visibleBillingPeriods: List<BillingPeriodInstance> = emptyList(),
+    val visiblePayments: List<BillingPeriodInstance> = emptyList(),
+    val periodsByCardId: Map<String, List<BillingPeriodInstance>> = emptyMap(),
 ) {
     val isInitialLoading: Boolean
-        get() = !initialLoadComplete && isLoading
+        get() = !initialLoadComplete
+}
 
-    val daysInMonth: Int
-        get() = CalendarBillingLogic.daysInMonth(year, month)
-
-    val calendarDays: List<Int?>
-        get() = CalendarBillingLogic.generateCalendarDays(year, month)
-
-    val relevantPeriods: List<BillingPeriodInstance>
-        get() = CalendarBillingLogic.periodsRelevantToMonth(activeCards, year, month)
-
-    val visibleBillingPeriods: List<BillingPeriodInstance>
-        get() = CalendarBillingLogic.billingPeriodsVisibleInMonth(relevantPeriods, year, month)
-
-    val visiblePayments: List<BillingPeriodInstance>
-        get() = CalendarBillingLogic.paymentsInMonth(relevantPeriods, year, month)
-
-    val monthYearTitle: String
-        get() = CalendarBillingLogic.formatMonthYear(year, month)
+private fun buildCalendarUiState(
+    year: Int,
+    month: Int,
+    selection: CalendarSelection?,
+    activeCards: List<ApiCard>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    initialLoadComplete: Boolean,
+    isPullRefreshing: Boolean,
+): CalendarUiState {
+    val relevantPeriods = CalendarBillingLogic.periodsRelevantToMonth(activeCards, year, month)
+    return CalendarUiState(
+        year = year,
+        month = month,
+        selection = selection,
+        activeCards = activeCards,
+        isLoading = isLoading,
+        errorMessage = errorMessage,
+        initialLoadComplete = initialLoadComplete,
+        isPullRefreshing = isPullRefreshing,
+        daysInMonth = CalendarBillingLogic.daysInMonth(year, month),
+        calendarDays = CalendarBillingLogic.generateCalendarDays(year, month),
+        monthYearTitle = CalendarBillingLogic.formatMonthYear(year, month),
+        relevantPeriods = relevantPeriods,
+        visibleBillingPeriods = CalendarBillingLogic.billingPeriodsVisibleInMonth(relevantPeriods, year, month),
+        visiblePayments = CalendarBillingLogic.paymentsInMonth(relevantPeriods, year, month),
+        periodsByCardId = relevantPeriods.groupBy { it.cardId },
+    )
 }
 
 class CalendarViewModel(
@@ -72,7 +91,7 @@ class CalendarViewModel(
         initialLoadComplete,
         isPullRefreshing,
     ) { data, loadComplete, pullRefreshing ->
-        CalendarUiState(
+        buildCalendarUiState(
             year = data.monthPair.first,
             month = data.monthPair.second,
             selection = data.selection,
@@ -118,9 +137,15 @@ class CalendarViewModel(
         selection.value = newSelection
     }
 
+    fun barDisplaysByDay(state: CalendarUiState): Map<Int, List<CardBarDisplay>> {
+        return (1..state.daysInMonth).associateWith { day ->
+            barDisplaysForDay(day, state)
+        }
+    }
+
     fun barDisplaysForDay(day: Int, state: CalendarUiState): List<CardBarDisplay> {
         return state.activeCards.map { card ->
-            val cardPeriods = state.relevantPeriods.filter { it.cardId == card.id }
+            val cardPeriods = state.periodsByCardId[card.id].orEmpty()
             val activePeriod = cardPeriods.firstOrNull { period ->
                 CalendarBillingLogic.dayInPeriod(period, state.year, state.month, day)
             }

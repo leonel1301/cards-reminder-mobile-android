@@ -8,6 +8,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsTracker
 import com.lenaralabs.cardsreminder.core.auth.AuthRepository
 import com.lenaralabs.cardsreminder.core.data.DevicesRepository
 import com.lenaralabs.cardsreminder.core.data.NotificationPreferences
@@ -45,6 +46,7 @@ class PushNotificationManager(
     private val authRepository: AuthRepository,
     private val devicesRepository: DevicesRepository,
     private val notificationPreferences: NotificationPreferences,
+    private val analyticsTracker: AnalyticsTracker,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -78,6 +80,13 @@ class PushNotificationManager(
         }
     }
 
+    suspend fun refreshAndCheckFullyEnabled(): Boolean {
+        refreshAuthorizationStatus()
+        refreshPreference()
+        val current = _state.value
+        return current.isPreferenceEnabled && current.isAuthorized
+    }
+
     suspend fun handleUserSessionChange(userSwitched: Boolean) {
         _state.update { it.copy(registrationError = null) }
         if (userSwitched) {
@@ -99,6 +108,7 @@ class PushNotificationManager(
                 return
             }
             setPreferenceEnabled(true)
+            analyticsTracker.logNotificationEnabled()
             ensureFcmToken()
             syncDeviceWithBackendIfNeeded()
         } else {

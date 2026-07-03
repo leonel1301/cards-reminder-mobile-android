@@ -12,6 +12,8 @@ data class CardsReminderColors(
     val appBackground: Color,
     val authBackground: Color,
     val primaryAction: Color,
+    val addActionButton: Color,
+    val onAddActionButton: Color,
     val cardSurface: Color,
     val sheetItemSurface: Color,
     val secondaryText: Color,
@@ -30,12 +32,18 @@ data class CardsReminderColors(
     val violetStateBackground: Color,
     val onTrackStateForeground: Color,
     val onTrackStateBackground: Color,
+    val switchUncheckedTrack: Color,
+    val switchUncheckedThumb: Color,
+    val switchDisabledTrack: Color,
+    val switchDisabledThumb: Color,
 )
 
 val LightCardsReminderColors = CardsReminderColors(
     appBackground = AppBackgroundLight,
     authBackground = AuthBackgroundLight,
     primaryAction = BrandPrimaryLight,
+    addActionButton = AddActionButton,
+    onAddActionButton = OnAddActionButton,
     cardSurface = CardSurfaceLight,
     sheetItemSurface = SheetItemSurfaceLight,
     secondaryText = SecondaryTextLight,
@@ -54,12 +62,18 @@ val LightCardsReminderColors = CardsReminderColors(
     violetStateBackground = VioletStateBackgroundLight,
     onTrackStateForeground = OnTrackStateForegroundLight,
     onTrackStateBackground = OnTrackStateBackgroundLight,
+    switchUncheckedTrack = SwitchUncheckedTrackLight,
+    switchUncheckedThumb = SwitchUncheckedThumbLight,
+    switchDisabledTrack = SwitchDisabledTrackLight,
+    switchDisabledThumb = SwitchDisabledThumbLight,
 )
 
 val DarkCardsReminderColors = CardsReminderColors(
     appBackground = AppBackgroundDark,
     authBackground = AuthBackgroundDark,
     primaryAction = BrandPrimaryDark,
+    addActionButton = AddActionButton,
+    onAddActionButton = OnAddActionButton,
     cardSurface = CardSurfaceDark,
     sheetItemSurface = SheetItemSurfaceDark,
     secondaryText = SecondaryTextDark,
@@ -78,6 +92,10 @@ val DarkCardsReminderColors = CardsReminderColors(
     violetStateBackground = VioletStateBackgroundDark,
     onTrackStateForeground = OnTrackStateForegroundDark,
     onTrackStateBackground = OnTrackStateBackgroundDark,
+    switchUncheckedTrack = SwitchUncheckedTrackDark,
+    switchUncheckedThumb = SwitchUncheckedThumbDark,
+    switchDisabledTrack = SwitchDisabledTrackDark,
+    switchDisabledThumb = SwitchDisabledThumbDark,
 )
 
 val LocalCardsReminderColors = staticCompositionLocalOf { LightCardsReminderColors }

@@ -1,6 +1,11 @@
 package com.lenaralabs.cardsreminder.feature.onboarding
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
@@ -33,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lenaralabs.cardsreminder.R
+import com.lenaralabs.cardsreminder.ui.animation.AppMotion
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 import kotlinx.coroutines.delay
@@ -49,13 +55,29 @@ fun SplashScreen(
 
     val logoScale by animateFloatAsState(
         targetValue = if (contentVisible) 1f else 0.85f,
-        animationSpec = tween(durationMillis = 600),
+        animationSpec = AppMotion.splashSpring,
         label = "logoScale",
+    )
+    val logoAlpha by animateFloatAsState(
+        targetValue = if (contentVisible) 1f else 0f,
+        animationSpec = AppMotion.splashSpring,
+        label = "logoAlpha",
     )
     val contentAlpha by animateFloatAsState(
         targetValue = if (contentVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 500, delayMillis = 250),
+        animationSpec = tween(durationMillis = 500, delayMillis = 250, easing = FastOutSlowInEasing),
         label = "contentAlpha",
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "splashIconPulse")
+    val iconPulse by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "iconPulse",
     )
 
     LaunchedEffect(Unit) {
@@ -78,8 +100,8 @@ fun SplashScreen(
             Surface(
                 modifier = Modifier
                     .size(120.dp)
-                    .scale(logoScale)
-                    .alpha(if (contentVisible) 1f else 0f),
+                    .scale(logoScale * iconPulse)
+                    .alpha(logoAlpha),
                 shape = CircleShape,
                 color = colors.primaryAction.copy(alpha = 0.12f),
             ) {

@@ -9,6 +9,10 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -51,13 +54,13 @@ import com.lenaralabs.cardsreminder.BuildConfig
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.notifications.NotificationAuthorizationStatus
+import com.lenaralabs.cardsreminder.ui.components.AppSwitch
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsSettingsScreen(
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val application = LocalContext.current.applicationContext as CardsReminderApp
     val viewModel: NotificationsSettingsViewModel = viewModel(
@@ -137,8 +140,11 @@ fun NotificationsSettingsScreen(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         containerColor = colors.appBackground,
+        contentWindowInsets = WindowInsets.safeDrawing.only(
+            WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+        ),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.screen_notifications_title)) },
@@ -182,7 +188,7 @@ fun NotificationsSettingsScreen(
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                Switch(
+                AppSwitch(
                     checked = state.isPreferenceEnabled,
                     onCheckedChange = ::onToggleChange,
                     enabled = state.authorizationStatus != NotificationAuthorizationStatus.Denied,

@@ -1,7 +1,6 @@
 package com.lenaralabs.cardsreminder.app
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -17,21 +16,29 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsScreens
 import com.lenaralabs.cardsreminder.feature.calendar.CalendarScreen
 import com.lenaralabs.cardsreminder.feature.cards.CardsScreen
 import com.lenaralabs.cardsreminder.feature.profile.ProfileScreen
 import com.lenaralabs.cardsreminder.feature.timeline.TimelineScreen
+import com.lenaralabs.cardsreminder.ui.animation.AppMotion
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
@@ -51,10 +58,22 @@ private fun AppTab.icon(isDarkTheme: Boolean): ImageVector = when (this) {
     AppTab.Profile -> Icons.Outlined.AccountCircle
 }
 
+private fun AppTab.analyticsScreenName(): String = when (this) {
+    AppTab.Today -> AnalyticsScreens.TIMELINE
+    AppTab.Calendar -> AnalyticsScreens.CALENDAR
+    AppTab.Cards -> AnalyticsScreens.CARDS
+    AppTab.Profile -> AnalyticsScreens.PROFILE
+}
+
 @Composable
 fun MainAppContent() {
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
-    val isDarkTheme = isSystemInDarkTheme()
+    val analyticsTracker = (LocalContext.current.applicationContext as CardsReminderApp).analyticsTracker
+
+    LaunchedEffect(selectedTab) {
+        analyticsTracker.logScreenView(selectedTab.analyticsScreenName())
+    }
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val colors = MaterialTheme.cardsReminder
 
     Scaffold(
@@ -86,30 +105,20 @@ fun MainAppContent() {
             }
         },
     ) { innerPadding ->
-        when (selectedTab) {
-            AppTab.Today -> TimelineScreen(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-            )
-
-            AppTab.Calendar -> CalendarScreen(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-            )
-
-            AppTab.Cards -> CardsScreen(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-            )
-
-            AppTab.Profile -> ProfileScreen(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-            )
+        AnimatedContent(
+            targetState = selectedTab,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            transitionSpec = { AppMotion.navFadeIn() togetherWith AppMotion.navFadeOut() },
+            label = "mainTab",
+        ) { tab ->
+            when (tab) {
+                AppTab.Today -> TimelineScreen(modifier = Modifier.fillMaxSize())
+                AppTab.Calendar -> CalendarScreen(modifier = Modifier.fillMaxSize())
+                AppTab.Cards -> CardsScreen(modifier = Modifier.fillMaxSize())
+                AppTab.Profile -> ProfileScreen(modifier = Modifier.fillMaxSize())
+            }
         }
     }
 }

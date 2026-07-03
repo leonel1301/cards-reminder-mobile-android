@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +34,8 @@ import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.model.ApiFeedback
 import com.lenaralabs.cardsreminder.core.util.AppLinks
 import com.lenaralabs.cardsreminder.core.util.DateFormatUtils
+import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
+import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,31 +112,37 @@ fun FeedbackBottomSheet(
                             }
                         }
                     } else {
-                        items(feedbacks, key = { it.id }) { feedback ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onFeedbackClick(feedback) }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                        itemsIndexed(feedbacks, key = { _, feedback -> feedback.id }) { index, feedback ->
+                            SmoothReveal(
+                                visible = true,
+                                index = index,
+                                style = RevealStyle.Standard,
                             ) {
-                                Text(
-                                    text = feedback.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                                Text(
-                                    text = DateFormatUtils.formatShortDateTime(feedback.createdAt),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = colors.secondaryText,
-                                    modifier = Modifier.padding(top = 2.dp),
-                                )
-                                Text(
-                                    text = feedback.content,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = colors.secondaryText,
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    maxLines = 2,
-                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onFeedbackClick(feedback) }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                ) {
+                                    Text(
+                                        text = feedback.title,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                    Text(
+                                        text = DateFormatUtils.formatShortDateTime(feedback.createdAt),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = colors.secondaryText,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                    )
+                                    Text(
+                                        text = feedback.content,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.secondaryText,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                        maxLines = 2,
+                                    )
+                                }
                             }
                             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         }

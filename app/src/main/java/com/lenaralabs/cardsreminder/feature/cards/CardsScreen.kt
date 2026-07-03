@@ -1,11 +1,12 @@
 package com.lenaralabs.cardsreminder.feature.cards
 
 import android.Manifest
-import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
-import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -27,23 +28,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
+import com.lenaralabs.cardsreminder.ui.animation.AppMotion
+import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
+import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,12 +63,39 @@ fun CardsScreen(
             cardsRepository = application.cardsRepository,
             paymentsRepository = application.paymentsRepository,
             ownersRepository = application.ownersRepository,
+            pushNotificationManager = application.pushNotificationManager,
         ),
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val owners by viewModel.owners.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
     val selfOwnerFormat = stringResource(R.string.owner_self_format)
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            viewModel.enableRemindersFromPrompt()
+        } else {
+            viewModel.dismissRemindersPrompt()
+        }
+    }
+
+    fun requestEnableReminders() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (granted) {
+                viewModel.enableRemindersFromPrompt()
+            } else {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            viewModel.enableRemindersFromPrompt()
+        }
+    }
 
     Box(
         modifier = modifier
@@ -93,10 +125,15 @@ fun CardsScreen(
                     ) {
                     state.dashboardSummary?.takeIf { it.hasAttentionItems }?.let { summary ->
                         item {
-                            DashboardSummaryBanner(
-                                summary = summary,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            )
+                            SmoothReveal(
+                                visible = true,
+                                style = RevealStyle.Section,
+                            ) {
+                                DashboardSummaryBanner(
+                                    summary = summary,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                )
+                            }
                         }
                     }
 
@@ -118,19 +155,27 @@ fun CardsScreen(
                             CardsEmptyState()
                         }
                     } else {
-                        items(state.cards, key = { it.id }) { card ->
+                        itemsIndexed(
+                            items = state.cards,
+                            key = { _, card -> card.id },
+                        ) { index, card ->
                             val isDeleting = state.deletingCardId == card.id
                             val isMarkingPaid = state.markingPaidCardId == card.id
                             val scale by animateFloatAsState(
                                 targetValue = if (isDeleting) 0.92f else 1f,
+                                animationSpec = tween(AppMotion.BASE_DURATION_MS),
                                 label = "deleteScale",
                             )
                             val alpha by animateFloatAsState(
                                 targetValue = if (isDeleting) 0f else 1f,
+                                animationSpec = tween(AppMotion.BASE_DURATION_MS),
                                 label = "deleteAlpha",
                             )
 
-                            Box(
+                            SmoothReveal(
+                                visible = !isDeleting,
+                                index = index,
+                                style = RevealStyle.Card,
                                 modifier = Modifier
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                                     .scale(scale)
@@ -194,8 +239,8 @@ fun CardsScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
+            containerColor = colors.addActionButton,
+            contentColor = colors.onAddActionButton,
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
             text = { Text(stringResource(R.string.action_add_card)) },
         )
@@ -209,6 +254,7 @@ fun CardsScreen(
                 owners = owners,
                 isSaving = state.isSaving,
                 onDismissRequest = viewModel::requestDismissSheet,
+                onSheetDismissed = viewModel::onFormSheetDismissed,
                 onSave = viewModel::saveForm,
                 onDelete = viewModel::deleteFromForm,
                 onNameChange = { value -> viewModel.updateForm { it.copy(name = value) } },
@@ -328,23 +374,7 @@ fun CardsScreen(
             title = { Text(stringResource(R.string.card_create_reminders_title)) },
             text = { Text(stringResource(R.string.card_create_reminders_message)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            val granted = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS,
-                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                            if (!granted) {
-                                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                }
-                                context.startActivity(intent)
-                            }
-                        }
-                        viewModel.completeCreateAfterReminders()
-                    },
-                ) {
+                TextButton(onClick = ::requestEnableReminders) {
                     Text(stringResource(R.string.card_create_reminders_enable))
                 }
             },

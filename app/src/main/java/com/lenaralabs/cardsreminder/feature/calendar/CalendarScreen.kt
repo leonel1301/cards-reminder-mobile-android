@@ -1,5 +1,6 @@
 package com.lenaralabs.cardsreminder.feature.calendar
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -37,6 +39,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
+import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
+import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @Composable
@@ -50,80 +54,87 @@ fun CalendarScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
 
-    Column(
+    val scrollState = rememberScrollState()
+
+    PullToRefreshBox(
+        isRefreshing = state.isPullRefreshing,
+        onRefresh = viewModel::refresh,
         modifier = modifier.fillMaxSize(),
     ) {
-        Text(
-            text = stringResource(R.string.screen_calendar_title),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(top = 8.dp, bottom = 4.dp),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        PullToRefreshBox(
-            isRefreshing = state.isPullRefreshing,
-            onRefresh = viewModel::refresh,
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Column(
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState),
+            ) {
+                Text(
+                    text = stringResource(R.string.screen_calendar_title),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    state.errorMessage?.let { message ->
-                        Text(
-                            text = message,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                .padding(bottom = 8.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.redStateForeground,
-                        )
-                    }
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp, bottom = 4.dp),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
 
-                    MonthHeader(
-                        title = state.monthYearTitle,
-                        onPreviousMonth = { viewModel.changeMonth(-1) },
-                        onNextMonth = { viewModel.changeMonth(1) },
+                state.errorMessage?.let { message ->
+                    Text(
+                        text = message,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.redStateForeground,
                     )
+                }
 
-                    WeekdayLabelsRow()
+                MonthHeader(
+                    title = state.monthYearTitle,
+                    onPreviousMonth = { viewModel.changeMonth(-1) },
+                    onNextMonth = { viewModel.changeMonth(1) },
+                )
 
-                    HorizontalDivider(color = colors.defaultBorder)
+                WeekdayLabelsRow()
+
+                HorizontalDivider(color = colors.defaultBorder)
 
                     if (state.activeCards.isEmpty() && !state.isInitialLoading) {
                         CalendarEmptyState()
                     } else {
-                        CalendarGrid(
-                            state = state,
-                            viewModel = viewModel,
-                        )
+                        AnimatedVisibility(visible = state.activeCards.isNotEmpty()) {
+                            CalendarGrid(
+                                state = state,
+                                viewModel = viewModel,
+                            )
+                        }
 
                         HorizontalDivider(color = colors.defaultBorder)
 
-                        if (state.activeCards.isNotEmpty()) {
-                            CalendarLegendRows(
-                                cards = state.activeCards,
-                                billingPeriods = state.visibleBillingPeriods,
-                                payments = state.visiblePayments,
-                                selection = state.selection,
-                                onSelectionChange = viewModel::onSelectionChange,
-                            )
+                        AnimatedVisibility(visible = state.activeCards.isNotEmpty()) {
+                            SmoothReveal(
+                                visible = true,
+                                style = RevealStyle.FromBottom,
+                            ) {
+                                CalendarLegendRows(
+                                    cards = state.activeCards,
+                                    billingPeriods = state.visibleBillingPeriods,
+                                    payments = state.visiblePayments,
+                                    selection = state.selection,
+                                    onSelectionChange = viewModel::onSelectionChange,
+                                )
+                            }
                         }
                     }
-                }
 
-                if (state.isInitialLoading && state.activeCards.isEmpty()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            if (state.isInitialLoading && state.activeCards.isEmpty()) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                )
             }
         }
     }
@@ -195,6 +206,17 @@ private fun CalendarGrid(
     state: CalendarUiState,
     viewModel: CalendarViewModel,
 ) {
+    val barsByDay = remember(
+        state.year,
+        state.month,
+        state.activeCards,
+        state.periodsByCardId,
+        state.selection,
+        state.daysInMonth,
+    ) {
+        viewModel.barDisplaysByDay(state)
+    }
+
     val weeks = state.calendarDays
         .chunked(7)
         .map { week ->
@@ -234,7 +256,7 @@ private fun CalendarGrid(
                             DayCell(
                                 day = day,
                                 isToday = viewModel.isToday(day, state),
-                                bars = viewModel.barDisplaysForDay(day, state),
+                                bars = barsByDay[day].orEmpty(),
                             )
                         } else {
                             Spacer(modifier = Modifier.height(52.dp))

@@ -1,5 +1,11 @@
 package com.lenaralabs.cardsreminder.feature.timeline
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,8 +33,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +53,24 @@ fun FinanceFeelingButton(
     val colors = MaterialTheme.cardsReminder
     val accent = feeling.accentColor(colors)
 
+    val infiniteTransition = rememberInfiniteTransition(label = "feelingPulse")
+    val iconScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (feeling.usesAttentionPulse) 1.14f else 1f,
+        animationSpec = if (feeling.usesAttentionPulse) {
+            infiniteRepeatable(
+                animation = tween(1100, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            )
+        } else {
+            infiniteRepeatable(
+                animation = tween(1),
+                repeatMode = RepeatMode.Restart,
+            )
+        },
+        label = "feelingIconScale",
+    )
+
     AssistChip(
         onClick = onClick,
         modifier = modifier,
@@ -60,7 +86,9 @@ fun FinanceFeelingButton(
                 imageVector = feeling.icon,
                 contentDescription = null,
                 tint = accent,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier
+                    .size(16.dp)
+                    .scale(iconScale),
             )
         },
         colors = AssistChipDefaults.assistChipColors(

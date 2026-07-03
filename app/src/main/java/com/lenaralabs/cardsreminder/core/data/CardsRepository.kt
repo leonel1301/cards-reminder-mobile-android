@@ -1,5 +1,6 @@
 package com.lenaralabs.cardsreminder.core.data
 
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsTracker
 import com.lenaralabs.cardsreminder.core.model.ApiCard
 import com.lenaralabs.cardsreminder.core.model.CreateCardRequest
 import com.lenaralabs.cardsreminder.core.model.UpdateCardRequest
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.update
 
 class CardsRepository(
     private val apiService: ApiService,
+    private val analyticsTracker: AnalyticsTracker,
 ) {
     private val _cards = MutableStateFlow<List<ApiCard>>(emptyList())
     val cards: StateFlow<List<ApiCard>> = _cards.asStateFlow()
@@ -54,6 +56,7 @@ class CardsRepository(
             _cards.update { current ->
                 (current + card).sortedBy { it.name.lowercase() }
             }
+            analyticsTracker.logCardCreated()
             Result.success(card)
         } catch (error: ApiException.NotAuthenticated) {
             resetSession()

@@ -151,9 +151,11 @@
     <string name="owners_section">Titulares</string>
     <string name="section_more_about_app">Más sobre la app</string>
     <string name="section_account">Cuenta</string>
+    <string name="section_preferences">Preferencias</string>
     <string name="section_other">Otros</string>
     <string name="action_settings">Ajustes</string>
     <string name="action_notifications">Notificaciones</string>
+    <string name="action_theme">Tema</string>
     <string name="action_sign_out">Cerrar sesión</string>
     <string name="action_add_owner">Añadir titular</string>
     <string name="action_delete_owner">Eliminar titular</string>
@@ -186,6 +188,10 @@
     <string name="app_description_short">Waloop - Ciclos de facturación y seguimiento de pagos</string>
     <string name="footer_version_build">Versión %1$s, build: %2$s</string>
     <string name="screen_notifications_title">Notificaciones</string>
+    <string name="screen_theme_title">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
     <string name="notifications_enable_toggle">Recordatorios de pago</string>
     <string name="notifications_toggle_footer">Las notificaciones se envían en el idioma de tu dispositivo.</string>
     <string name="notifications_status_enabled">Notificaciones activadas</string>

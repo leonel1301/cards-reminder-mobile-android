@@ -56,6 +56,7 @@ fun ProfileActionRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isDestructive: Boolean = false,
+    value: String? = null,
 ) {
     val colors = MaterialTheme.cardsReminder
     val accent = if (isDestructive) colors.redStateForeground else MaterialTheme.colorScheme.primary
@@ -89,6 +90,13 @@ fun ProfileActionRow(
             color = if (isDestructive) accent else MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f),
         )
+        value?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.secondaryText,
+            )
+        }
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,

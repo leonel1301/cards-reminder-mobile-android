@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -47,7 +48,10 @@ import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.util.AppLinks
 import com.lenaralabs.cardsreminder.ui.components.AuthGradientBackground
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsScreens
+import com.lenaralabs.cardsreminder.core.analytics.TrackScreen
 import com.lenaralabs.cardsreminder.ui.components.PoweredByLenaraFooter
+import com.lenaralabs.cardsreminder.ui.animation.pressScaleEffect
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 import kotlinx.coroutines.delay
 
@@ -60,6 +64,7 @@ fun PostLoginSetupScreen(
         ),
     ),
 ) {
+    TrackScreen(AnalyticsScreens.POST_LOGIN_SETUP)
     val colors = MaterialTheme.cardsReminder
     val isDarkTheme = isSystemInDarkTheme()
     val sessionState by viewModel.sessionState.collectAsStateWithLifecycle()
@@ -88,6 +93,12 @@ fun PostLoginSetupScreen(
         animationSpec = tween(durationMillis = 680),
         label = "actionsOffset",
     )
+    val loadingAlpha by animateFloatAsState(
+        targetValue = if (sessionState.isLoading) 1f else 0f,
+        animationSpec = tween(250),
+        label = "loadingAlpha",
+    )
+    val continueInteraction = remember { MutableInteractionSource() }
 
     LaunchedEffect(Unit) {
         messageVisible = true
@@ -142,8 +153,10 @@ fun PostLoginSetupScreen(
                         onClick = viewModel::acceptTerms,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
+                            .height(56.dp)
+                            .pressScaleEffect(continueInteraction),
                         enabled = !sessionState.isLoading,
+                        interactionSource = continueInteraction,
                         shape = MaterialTheme.shapes.large,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colors.primaryAction,
@@ -186,6 +199,7 @@ fun PostLoginSetupScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .alpha(loadingAlpha)
                         .background(Color.Black.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {

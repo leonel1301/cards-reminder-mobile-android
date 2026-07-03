@@ -8,20 +8,24 @@ val AppBackgroundDark = Color(0xFF000000)
 val AuthBackgroundLight = Color(0xFFECECEC)
 val AuthBackgroundDark = Color(0xFF0D1021)
 
-// Brand indigo — onboarding, splash, sign-in accents (iOS PrimaryAction).
-val BrandPrimaryLight = Color(0xFF4F46E5)
+// Brand indigo — mark as paid, auth CTAs, onboarding accents.
+val BrandPrimaryLight = Color(0xFF5046E5)
 val BrandPrimaryDark = Color(0xFF6366F1)
 
-// Material 3 blue — main app chrome (FAB, nav, primary buttons).
-val AppPrimaryLight = Color(0xFF005DB6)
-val OnAppPrimaryLight = Color(0xFFFFFFFF)
-val AppPrimaryContainerLight = Color(0xFFD6E3FF)
-val OnAppPrimaryContainerLight = Color(0xFF001B3D)
+// Add card / add owner — same indigo in light and dark.
+val AddActionButton = Color(0xFF5046E5)
+val OnAddActionButton = Color(0xFFFFFFFF)
 
-val AppPrimaryDark = Color(0xFFAAC7FF)
-val OnAppPrimaryDark = Color(0xFF00315B)
-val AppPrimaryContainerDark = Color(0xFF004683)
-val OnAppPrimaryContainerDark = Color(0xFFD6E3FF)
+// Material 3 primary — nav, tabs, default buttons, icons.
+val AppPrimaryLight = Color(0xFF5046E5)
+val OnAppPrimaryLight = Color(0xFFFFFFFF)
+val AppPrimaryContainerLight = Color(0xFFE8E6FC)
+val OnAppPrimaryContainerLight = Color(0xFF2E2880)
+
+val AppPrimaryDark = Color(0xFF6366F1)
+val OnAppPrimaryDark = Color(0xFFFFFFFF)
+val AppPrimaryContainerDark = Color(0xFF2E2860)
+val OnAppPrimaryContainerDark = Color(0xFFD4D0F7)
 
 val CardSurfaceLight = Color(0xFFF8F9FA)
 val CardSurfaceDark = Color(0xFF1E2235)
@@ -65,12 +69,12 @@ val RedStateForegroundDark = Color(0xFFC99999)
 val RedStateBackgroundLight = Color(0xFFFFF1F1)
 val RedStateBackgroundDark = Color(0xFF251A1A)
 
-// Violet state
-val VioletStateForegroundLight = Color(0xFF8574A8)
-val VioletStateForegroundDark = Color(0xFFA999C4)
+// Violet state — optimal purchase day tags and badges.
+val VioletStateForegroundLight = Color(0xFF867D9A)
+val VioletStateForegroundDark = Color(0xFF9F9AAE)
 
-val VioletStateBackgroundLight = Color(0xFFF4F0FA)
-val VioletStateBackgroundDark = Color(0xFF1E1A28)
+val VioletStateBackgroundLight = Color(0xFFF3F0FB)
+val VioletStateBackgroundDark = Color(0xFF201929)
 
 // On-track state
 val OnTrackStateForegroundLight = Color(0xFF5E5E63)
@@ -78,3 +82,14 @@ val OnTrackStateForegroundDark = Color(0xFFAEAEB2)
 
 val OnTrackStateBackgroundLight = Color(0xFFF2F2F7)
 val OnTrackStateBackgroundDark = Color(0xFF3A3A3C)
+
+// Switch — unchecked / disabled states with enough contrast on app backgrounds.
+val SwitchUncheckedTrackLight = Color(0xFFD1D5DB)
+val SwitchUncheckedThumbLight = Color(0xFFFFFFFF)
+val SwitchDisabledTrackLight = Color(0xFFE5E7EB)
+val SwitchDisabledThumbLight = Color(0xFF9CA3AF)
+
+val SwitchUncheckedTrackDark = Color(0xFF52525B)
+val SwitchUncheckedThumbDark = Color(0xFFD4D4D8)
+val SwitchDisabledTrackDark = Color(0xFF3F3F46)
+val SwitchDisabledThumbDark = Color(0xFF71717A)

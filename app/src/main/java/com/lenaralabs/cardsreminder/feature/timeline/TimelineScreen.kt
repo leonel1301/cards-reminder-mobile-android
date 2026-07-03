@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Verified
@@ -24,7 +24,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,6 +41,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.feature.cards.CardPaymentsBottomSheet
+import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
+import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,6 +59,21 @@ fun TimelineScreen(
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
+    val contentKey = remember(
+        state.summary,
+        state.sections,
+        state.featuredEntry,
+        state.showAllGood,
+    ) {
+        state.summary.hashCode() +
+            state.sections.hashCode() +
+            (state.featuredEntry?.card?.id?.hashCode() ?: 0) +
+            state.showAllGood.hashCode()
+    }
+    var contentVisible by remember(contentKey) { mutableStateOf(false) }
+    LaunchedEffect(contentKey) {
+        contentVisible = true
+    }
 
     state.pendingQuickPayCard?.let { card ->
         AlertDialog(
@@ -142,27 +163,37 @@ fun TimelineScreen(
 
                         state.summary?.let { summary ->
                             item {
-                                TimelineSummaryStrip(summary = summary)
+                                SmoothReveal(
+                                    visible = contentVisible,
+                                    style = RevealStyle.Section,
+                                ) {
+                                    TimelineSummaryStrip(summary = summary)
+                                }
                             }
                         }
 
                         state.featuredEntry?.let { entry ->
                             item {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                SmoothReveal(
+                                    visible = contentVisible,
+                                    style = RevealStyle.Card,
                                 ) {
-                                    TimelineFeaturedCard(
-                                        card = entry.card,
-                                        status = entry.status,
-                                        modifier = Modifier.clickable {
-                                            viewModel.openPayments(entry.card)
-                                        },
-                                    )
-                                    state.bestForPurchase?.why?.let { why ->
-                                        TimelinePurchaseInsightRow(why = why)
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        TimelineFeaturedCard(
+                                            card = entry.card,
+                                            status = entry.status,
+                                            modifier = Modifier.clickable {
+                                                viewModel.openPayments(entry.card)
+                                            },
+                                        )
+                                        state.bestForPurchase?.why?.let { why ->
+                                            TimelinePurchaseInsightRow(why = why)
+                                        }
                                     }
                                 }
                             }
@@ -170,33 +201,51 @@ fun TimelineScreen(
 
                         if (state.showAllGood) {
                             item {
-                                TimelineAllGoodState(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                )
-                            }
-                        } else {
-                            state.sections.forEach { section ->
-                                item {
-                                    Text(
-                                        text = stringResource(section.titleRes),
+                                SmoothReveal(
+                                    visible = contentVisible,
+                                    index = 1,
+                                    style = RevealStyle.Section,
+                                ) {
+                                    TimelineAllGoodState(
                                         modifier = Modifier.padding(horizontal = 16.dp),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
                                     )
                                 }
-                                items(
+                            }
+                        } else {
+                            state.sections.forEachIndexed { sectionIndex, section ->
+                                item {
+                                    SmoothReveal(
+                                        visible = contentVisible,
+                                        index = sectionIndex,
+                                        style = RevealStyle.Section,
+                                    ) {
+                                        Text(
+                                            text = stringResource(section.titleRes),
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                    }
+                                }
+                                itemsIndexed(
                                     items = section.events,
-                                    key = { it.id },
-                                ) { event ->
-                                    TimelineEventListItem(
-                                        event = event,
-                                        isMarkingPaid = state.markingPaidCardId == event.card.id,
-                                        onOpenPayments = { viewModel.openPayments(event.card) },
-                                        onMarkPaid = { viewModel.requestQuickMarkPaid(event.card) },
+                                    key = { _, event -> event.id },
+                                ) { eventIndex, event ->
+                                    SmoothReveal(
+                                        visible = contentVisible,
+                                        index = eventIndex,
+                                        style = RevealStyle.Event,
                                         modifier = Modifier
                                             .padding(horizontal = 16.dp)
                                             .padding(bottom = 14.dp),
-                                    )
+                                    ) {
+                                        TimelineEventListItem(
+                                            event = event,
+                                            isMarkingPaid = state.markingPaidCardId == event.card.id,
+                                            onOpenPayments = { viewModel.openPayments(event.card) },
+                                            onMarkPaid = { viewModel.requestQuickMarkPaid(event.card) },
+                                        )
+                                    }
                                 }
                             }
                         }

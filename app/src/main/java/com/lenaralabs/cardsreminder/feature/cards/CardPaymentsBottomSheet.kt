@@ -466,8 +466,16 @@ private fun OptimalDayTag(
     val colors = MaterialTheme.cardsReminder
     Surface(
         shape = RoundedCornerShape(8.dp),
-        color = if (highlighted) colors.primaryAction.copy(alpha = 0.12f) else colors.sheetItemSurface,
-        contentColor = if (highlighted) colors.primaryAction else MaterialTheme.colorScheme.onBackground,
+        color = if (highlighted) {
+            colors.primaryAction.copy(alpha = 0.12f)
+        } else {
+            colors.violetStateBackground
+        },
+        contentColor = if (highlighted) {
+            colors.primaryAction
+        } else {
+            colors.violetStateForeground
+        },
     ) {
         Text(
             text = label,

@@ -48,6 +48,8 @@ import com.lenaralabs.cardsreminder.ui.components.AuthGradientBackground
 import com.lenaralabs.cardsreminder.ui.components.PoweredByLenaraFooter
 import com.lenaralabs.cardsreminder.ui.theme.CardsReminderColors
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsScreens
+import com.lenaralabs.cardsreminder.core.analytics.TrackScreen
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 import kotlinx.coroutines.launch
 
@@ -57,6 +59,7 @@ fun OnboardingScreen(
     onComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    TrackScreen(AnalyticsScreens.ONBOARDING)
     val pages = OnboardingPages.all
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()

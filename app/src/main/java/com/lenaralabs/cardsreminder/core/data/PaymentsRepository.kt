@@ -1,5 +1,6 @@
 package com.lenaralabs.cardsreminder.core.data
 
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsTracker
 import com.lenaralabs.cardsreminder.core.model.ApiCardStatus
 import com.lenaralabs.cardsreminder.core.model.BestForPurchase
 import com.lenaralabs.cardsreminder.core.model.CardPaymentsResponse
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.update
 
 class PaymentsRepository(
     private val apiService: ApiService,
+    private val analyticsTracker: AnalyticsTracker,
 ) {
     private val _statusByCardId = MutableStateFlow<Map<String, ApiCardStatus>>(emptyMap())
     val statusByCardId: StateFlow<Map<String, ApiCardStatus>> = _statusByCardId.asStateFlow()
@@ -81,6 +83,8 @@ class PaymentsRepository(
     suspend fun fetchOptimalPurchaseDays(cardId: String): OptimalPurchaseDaysResponse? {
         return runCatching {
             apiService.getDecoded<OptimalPurchaseDaysResponse>("/cards/$cardId/optimal-purchase-days")
+        }.onSuccess {
+            analyticsTracker.logPurchaseDayChecked()
         }.getOrNull()
     }
 
@@ -100,6 +104,7 @@ class PaymentsRepository(
             )
             _statusByCardId.update { it + (cardId to response.status) }
             fetchDashboard(silentUnlessEmpty = false)
+            analyticsTracker.logPaymentCompleted()
             Result.success(response)
         } catch (error: ApiException.NotAuthenticated) {
             resetSession()

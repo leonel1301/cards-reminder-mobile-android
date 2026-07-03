@@ -3,7 +3,7 @@ package com.lenaralabs.cardsreminder.feature.timeline
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.model.DashboardSummary
+import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
+import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 private data class SummaryChip(
@@ -84,19 +86,25 @@ fun TimelineSummaryStrip(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(chips) { chip ->
-            FilterChip(
-                selected = true,
-                onClick = {},
-                enabled = false,
-                label = { Text(chip.label) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = chip.background.copy(alpha = 0.85f),
-                    selectedLabelColor = chip.foreground,
-                    disabledSelectedContainerColor = chip.background.copy(alpha = 0.85f),
-                    disabledLabelColor = chip.foreground,
-                ),
-            )
+        itemsIndexed(chips) { index, chip ->
+            SmoothReveal(
+                visible = true,
+                index = index,
+                style = RevealStyle.Section,
+            ) {
+                FilterChip(
+                    selected = true,
+                    onClick = {},
+                    enabled = false,
+                    label = { Text(chip.label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = chip.background.copy(alpha = 0.85f),
+                        selectedLabelColor = chip.foreground,
+                        disabledSelectedContainerColor = chip.background.copy(alpha = 0.85f),
+                        disabledLabelColor = chip.foreground,
+                    ),
+                )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.lenaralabs.cardsreminder.core.auth
 
+import com.lenaralabs.cardsreminder.core.analytics.AnalyticsTracker
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -9,7 +10,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 
-class AuthRepository {
+class AuthRepository(
+    private val analyticsTracker: AnalyticsTracker,
+) {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     private val _currentUser = MutableStateFlow(auth.currentUser)
@@ -21,6 +24,7 @@ class AuthRepository {
     private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
         _currentUser.update { firebaseAuth.currentUser }
         _isSignedIn.value = firebaseAuth.currentUser != null
+        analyticsTracker.setUserId(firebaseAuth.currentUser?.uid)
     }
 
     init {

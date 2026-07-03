@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -58,6 +59,8 @@ import com.lenaralabs.cardsreminder.core.model.ApiOwner
 import com.lenaralabs.cardsreminder.core.util.AppLinks
 import com.lenaralabs.cardsreminder.core.util.DateFormatUtils
 import com.lenaralabs.cardsreminder.ui.components.PoweredByLenaraFooter
+import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
+import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +82,6 @@ fun ProfileScreen(
     val feedbacks by viewModel.feedbacks.collectAsStateWithLifecycle()
     val feedbackLoading by application.feedbackRepository.isLoading.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
-    val selfOwnerFormat = stringResource(R.string.owner_self_format)
     val salaryNotSet = stringResource(R.string.salary_day_not_set)
     val salaryDayFormat = stringResource(R.string.owner_salary_day_value)
 
@@ -89,7 +91,6 @@ fun ProfileScreen(
             onBack = viewModel::closeSettings,
             onSignOut = viewModel::signOut,
             onDeleteAccount = { viewModel.deleteAccount {} },
-            modifier = modifier,
         )
         return
     }
@@ -351,6 +352,10 @@ fun ProfileScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.addActionButton,
+                            contentColor = colors.onAddActionButton,
+                        ),
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.PersonAdd,
@@ -387,17 +392,23 @@ fun ProfileScreen(
                         )
                     }
                 } else {
-                    items(state.owners, key = { it.id }) { owner ->
-                        OwnerRow(
-                            owner = owner,
-                            displayName = application.ownersRepository.ownerDisplayName(owner, selfOwnerFormat),
-                            salaryLabel = application.ownersRepository.salaryDayLabel(
-                                owner,
-                                salaryNotSet,
-                                salaryDayFormat,
-                            ),
-                            onClick = { viewModel.openEditOwner(owner) },
-                        )
+                    itemsIndexed(state.owners, key = { _, owner -> owner.id }) { index, owner ->
+                        SmoothReveal(
+                            visible = true,
+                            index = index,
+                            style = RevealStyle.Standard,
+                        ) {
+                            OwnerRow(
+                                owner = owner,
+                                displayName = owner.name,
+                                salaryLabel = application.ownersRepository.salaryDayLabel(
+                                    owner,
+                                    salaryNotSet,
+                                    salaryDayFormat,
+                                ),
+                                onClick = { viewModel.openEditOwner(owner) },
+                            )
+                        }
                     }
                 }
 

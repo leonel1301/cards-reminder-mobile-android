@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.lenaralabs.cardsreminder.core.data.CardsRepository
 import com.lenaralabs.cardsreminder.core.data.OwnersRepository
 import com.lenaralabs.cardsreminder.core.data.PaymentsRepository
+import com.lenaralabs.cardsreminder.core.notifications.PushNotificationManager
 import com.lenaralabs.cardsreminder.core.model.ApiCard
 import com.lenaralabs.cardsreminder.core.model.ApiCardStatus
 import com.lenaralabs.cardsreminder.core.model.ApiOwner
@@ -86,6 +87,7 @@ class CardsViewModel(
     private val cardsRepository: CardsRepository,
     private val paymentsRepository: PaymentsRepository,
     private val ownersRepository: OwnersRepository,
+    private val pushNotificationManager: PushNotificationManager,
 ) : ViewModel() {
 
     private val expandedMenuCardId = MutableStateFlow<String?>(null)
@@ -332,14 +334,18 @@ class CardsViewModel(
         activeSheet.value = CardsSheet.Payments(card)
     }
 
-    fun requestDismissSheet() {
+    fun requestDismissSheet(): Boolean {
         if (formState.value.isDirty &&
             (activeSheet.value is CardsSheet.Create || activeSheet.value is CardsSheet.Edit)
         ) {
             showDiscardFormDialog.value = true
-        } else {
-            dismissSheet()
+            return false
         }
+        return true
+    }
+
+    fun onFormSheetDismissed() {
+        dismissSheet()
     }
 
     fun confirmDiscardForm() {
@@ -466,7 +472,11 @@ class CardsViewModel(
                     cardsRepository.createCard(request)
                         .onSuccess {
                             paymentsRepository.fetchDashboard(silentUnlessEmpty = false)
-                            showRemindersPrompt.value = true
+                            formState.value = CardFormState()
+                            closeSheetCompletely()
+                            if (!pushNotificationManager.refreshAndCheckFullyEnabled()) {
+                                showRemindersPrompt.value = true
+                            }
                         }
                 }
 
@@ -508,12 +518,17 @@ class CardsViewModel(
 
     fun dismissRemindersLaterInfo() {
         showRemindersLaterInfo.value = false
-        closeSheetCompletely()
     }
 
     fun completeCreateAfterReminders() {
         showRemindersPrompt.value = false
-        closeSheetCompletely()
+    }
+
+    fun enableRemindersFromPrompt() {
+        viewModelScope.launch {
+            pushNotificationManager.applyNotificationsPreference(enabled = true)
+            completeCreateAfterReminders()
+        }
     }
 
     fun showLastFourHelp() {
@@ -532,10 +547,16 @@ class CardsViewModel(
         private val cardsRepository: CardsRepository,
         private val paymentsRepository: PaymentsRepository,
         private val ownersRepository: OwnersRepository,
+        private val pushNotificationManager: PushNotificationManager,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return CardsViewModel(cardsRepository, paymentsRepository, ownersRepository) as T
+            return CardsViewModel(
+                cardsRepository = cardsRepository,
+                paymentsRepository = paymentsRepository,
+                ownersRepository = ownersRepository,
+                pushNotificationManager = pushNotificationManager,
+            ) as T
         }
     }
 }
