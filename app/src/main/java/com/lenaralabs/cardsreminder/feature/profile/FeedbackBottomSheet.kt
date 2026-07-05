@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -21,7 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +34,8 @@ import com.lenaralabs.cardsreminder.core.util.AppLinks
 import com.lenaralabs.cardsreminder.core.util.DateFormatUtils
 import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
 import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
+import com.lenaralabs.cardsreminder.ui.components.AppPullToRefreshBox
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +53,7 @@ fun FeedbackBottomSheet(
 
     ModalBottomSheet(onDismissRequest = onDismissRequest) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            PullToRefreshBox(
+            AppPullToRefreshBox(
                 isRefreshing = isLoading && feedbacks.isNotEmpty(),
                 onRefresh = onRefresh,
             ) {
@@ -156,7 +156,7 @@ fun FeedbackBottomSheet(
                                     .padding(32.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                CircularProgressIndicator()
+                                AppInlineLoadingIndicator(size = 32.dp)
                             }
                         }
                     }

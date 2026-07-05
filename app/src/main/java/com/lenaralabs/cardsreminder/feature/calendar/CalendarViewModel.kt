@@ -9,7 +9,6 @@ import java.util.Calendar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,7 +20,6 @@ data class CalendarUiState(
     val activeCards: List<ApiCard> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val initialLoadComplete: Boolean = false,
     val isPullRefreshing: Boolean = false,
     val daysInMonth: Int = CalendarBillingLogic.daysInMonth(year, month),
     val calendarDays: List<Int?> = CalendarBillingLogic.generateCalendarDays(year, month),
@@ -32,7 +30,7 @@ data class CalendarUiState(
     val periodsByCardId: Map<String, List<BillingPeriodInstance>> = emptyMap(),
 ) {
     val isInitialLoading: Boolean
-        get() = !initialLoadComplete
+        get() = isLoading && activeCards.isEmpty()
 }
 
 private fun buildCalendarUiState(
@@ -42,7 +40,6 @@ private fun buildCalendarUiState(
     activeCards: List<ApiCard>,
     isLoading: Boolean,
     errorMessage: String?,
-    initialLoadComplete: Boolean,
     isPullRefreshing: Boolean,
 ): CalendarUiState {
     val relevantPeriods = CalendarBillingLogic.periodsRelevantToMonth(activeCards, year, month)
@@ -53,7 +50,6 @@ private fun buildCalendarUiState(
         activeCards = activeCards,
         isLoading = isLoading,
         errorMessage = errorMessage,
-        initialLoadComplete = initialLoadComplete,
         isPullRefreshing = isPullRefreshing,
         daysInMonth = CalendarBillingLogic.daysInMonth(year, month),
         calendarDays = CalendarBillingLogic.generateCalendarDays(year, month),
@@ -75,7 +71,6 @@ class CalendarViewModel(
 
     private val displayedMonth = MutableStateFlow(initialYear to initialMonth)
     private val selection = MutableStateFlow<CalendarSelection?>(null)
-    private val initialLoadComplete = MutableStateFlow(false)
     private val isPullRefreshing = MutableStateFlow(false)
 
     val uiState: StateFlow<CalendarUiState> = combine(
@@ -88,9 +83,8 @@ class CalendarViewModel(
         ) { monthPair, currentSelection, cards, isLoading, errorMessage ->
             CalendarDataSnapshot(monthPair, currentSelection, cards, isLoading, errorMessage)
         },
-        initialLoadComplete,
         isPullRefreshing,
-    ) { data, loadComplete, pullRefreshing ->
+    ) { data, pullRefreshing ->
         buildCalendarUiState(
             year = data.monthPair.first,
             month = data.monthPair.second,
@@ -98,23 +92,17 @@ class CalendarViewModel(
             activeCards = data.cards.filter { it.isActive },
             isLoading = data.isLoading,
             errorMessage = data.errorMessage,
-            initialLoadComplete = loadComplete,
             isPullRefreshing = pullRefreshing,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = CalendarUiState(year = initialYear, month = initialMonth),
+        initialValue = CalendarUiState(
+            year = initialYear,
+            month = initialMonth,
+            isLoading = true,
+        ),
     )
-
-    init {
-        viewModelScope.launch {
-            if (cardsRepository.cards.value.isEmpty()) {
-                cardsRepository.fetchCards(silentUnlessEmpty = false)
-            }
-            initialLoadComplete.value = true
-        }
-    }
 
     fun refresh() {
         viewModelScope.launch {

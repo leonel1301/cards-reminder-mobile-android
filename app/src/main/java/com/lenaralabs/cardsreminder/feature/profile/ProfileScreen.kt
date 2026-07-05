@@ -2,6 +2,7 @@ package com.lenaralabs.cardsreminder.feature.profile
 
 import android.content.Intent
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,9 +28,6 @@ import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -61,6 +58,11 @@ import com.lenaralabs.cardsreminder.core.util.DateFormatUtils
 import com.lenaralabs.cardsreminder.ui.components.PoweredByLenaraFooter
 import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
 import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
+import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenu
+import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenuItem
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
+import com.lenaralabs.cardsreminder.ui.components.AppSignOutOverlay
+import com.lenaralabs.cardsreminder.ui.components.AppPullToRefreshBox
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,8 +72,8 @@ fun ProfileScreen(
 ) {
     val application = LocalContext.current.applicationContext as CardsReminderApp
     val context = LocalContext.current
-    val viewModel: ProfileViewModel = viewModel(
-        factory = ProfileViewModel.Factory(
+    val viewModel: ProfileUiState.ProfileViewModel = viewModel(
+        factory = ProfileUiState.ProfileViewModel.Factory(
             userRepository = application.userRepository,
             ownersRepository = application.ownersRepository,
             feedbackRepository = application.feedbackRepository,
@@ -85,6 +87,7 @@ fun ProfileScreen(
     val salaryNotSet = stringResource(R.string.salary_day_not_set)
     val salaryDayFormat = stringResource(R.string.owner_salary_day_value)
 
+    Box(modifier = modifier.fillMaxSize()) {
     if (state.showSettings) {
         SettingsScreen(
             isDeletingAccount = state.isLoadingProfile,
@@ -92,9 +95,7 @@ fun ProfileScreen(
             onSignOut = viewModel::signOut,
             onDeleteAccount = { viewModel.deleteAccount {} },
         )
-        return
-    }
-
+    } else {
     fun openUrl(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
@@ -246,10 +247,10 @@ fun ProfileScreen(
         ProfileSheet.None -> Unit
     }
 
-    PullToRefreshBox(
+    AppPullToRefreshBox(
         isRefreshing = state.isPullRefreshing,
         onRefresh = { viewModel.refresh() },
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -277,18 +278,22 @@ fun ProfileScreen(
                                     contentDescription = stringResource(R.string.action_more_options),
                                 )
                             }
-                            DropdownMenu(
+                            AppDropdownMenu(
                                 expanded = state.showMenu,
                                 onDismissRequest = { viewModel.setMenuExpanded(false) },
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.action_settings)) },
-                                    onClick = viewModel::openSettings,
+                                val menuActions = listOf(
+                                    ProfileMenuAction(R.string.action_settings, viewModel::openSettings),
+                                    ProfileMenuAction(R.string.action_sign_out, viewModel::signOut),
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.action_sign_out)) },
-                                    onClick = viewModel::signOut,
-                                )
+                                menuActions.forEachIndexed { index, action ->
+                                    AppDropdownMenuItem(
+                                        index = index,
+                                        count = menuActions.size,
+                                        text = { Text(stringResource(action.labelRes)) },
+                                        onClick = action.onClick,
+                                    )
+                                }
                             }
                         }
                     }
@@ -377,7 +382,7 @@ fun ProfileScreen(
                                 .padding(24.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            CircularProgressIndicator()
+                            AppInlineLoadingIndicator(size = 32.dp)
                         }
                     }
                 } else if (state.owners.isEmpty()) {
@@ -470,6 +475,15 @@ fun ProfileScreen(
                 }
         }
     }
+    }
+
+    if (state.isSigningOut) {
+        AppSignOutOverlay(
+            indicatorColor = colors.primaryAction,
+            trackColor = colors.defaultBorder,
+        )
+    }
+    }
 }
 
 @Composable
@@ -544,3 +558,8 @@ private fun OwnerRow(
         )
     }
 }
+
+private data class ProfileMenuAction(
+    @param:StringRes val labelRes: Int,
+    val onClick: () -> Unit,
+)

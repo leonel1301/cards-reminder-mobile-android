@@ -26,6 +26,7 @@
     <string name="sign_in_choose_method">Toma menos de un minuto — sin contraseñas que recordar.</string>
     <string name="sign_in_continue_google">Continuar con Google</string>
     <string name="sign_in_loading">Iniciando sesión…</string>
+    <string name="sign_out_loading">Cerrando sesión…</string>
     <string name="post_login_welcome_excited">Estamos emocionados de empezar esta trayectoria contigo</string>
     <string name="post_login_welcome_ready">Bienvenido a Waloop, tu aliado para pagar a tiempo</string>
     <string name="post_login_terms_prefix">Al continuar, aceptas nuestros </string>

@@ -1,6 +1,5 @@
 package com.lenaralabs.cardsreminder.feature.calendar
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,13 +16,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -39,8 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
-import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
-import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
+import com.lenaralabs.cardsreminder.ui.components.AppPullToRefreshBox
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @Composable
@@ -56,7 +53,7 @@ fun CalendarScreen(
 
     val scrollState = rememberScrollState()
 
-    PullToRefreshBox(
+    AppPullToRefreshBox(
         isRefreshing = state.isPullRefreshing,
         onRefresh = viewModel::refresh,
         modifier = modifier.fillMaxSize(),
@@ -100,39 +97,30 @@ fun CalendarScreen(
 
                 HorizontalDivider(color = colors.defaultBorder)
 
-                    if (state.activeCards.isEmpty() && !state.isInitialLoading) {
-                        CalendarEmptyState()
-                    } else {
-                        AnimatedVisibility(visible = state.activeCards.isNotEmpty()) {
-                            CalendarGrid(
-                                state = state,
-                                viewModel = viewModel,
-                            )
-                        }
+                if (state.activeCards.isEmpty() && !state.isInitialLoading) {
+                    CalendarEmptyState()
+                } else if (state.activeCards.isNotEmpty()) {
+                    CalendarGrid(
+                        state = state,
+                        viewModel = viewModel,
+                    )
 
-                        HorizontalDivider(color = colors.defaultBorder)
+                    HorizontalDivider(color = colors.defaultBorder)
 
-                        AnimatedVisibility(visible = state.activeCards.isNotEmpty()) {
-                            SmoothReveal(
-                                visible = true,
-                                style = RevealStyle.FromBottom,
-                            ) {
-                                CalendarLegendRows(
-                                    cards = state.activeCards,
-                                    billingPeriods = state.visibleBillingPeriods,
-                                    payments = state.visiblePayments,
-                                    selection = state.selection,
-                                    onSelectionChange = viewModel::onSelectionChange,
-                                )
-                            }
-                        }
-                    }
+                    CalendarLegendRows(
+                        cards = state.activeCards,
+                        billingPeriods = state.visibleBillingPeriods,
+                        payments = state.visiblePayments,
+                        selection = state.selection,
+                        onSelectionChange = viewModel::onSelectionChange,
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            if (state.isInitialLoading && state.activeCards.isEmpty()) {
-                CircularProgressIndicator(
+            if (state.isInitialLoading) {
+                AppInlineLoadingIndicator(
                     modifier = Modifier.align(Alignment.Center),
                 )
             }

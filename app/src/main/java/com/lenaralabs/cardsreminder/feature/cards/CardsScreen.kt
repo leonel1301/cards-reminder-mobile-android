@@ -20,14 +20,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -49,6 +46,9 @@ import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.ui.animation.AppMotion
 import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
 import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
+import com.lenaralabs.cardsreminder.ui.components.AppExtendedFab
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
+import com.lenaralabs.cardsreminder.ui.components.AppPullToRefreshBox
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -113,7 +113,7 @@ fun CardsScreen(
                 fontWeight = FontWeight.Bold,
             )
 
-            PullToRefreshBox(
+            AppPullToRefreshBox(
                 isRefreshing = state.isPullRefreshing,
                 onRefresh = viewModel::refresh,
                 modifier = Modifier.fillMaxSize(),
@@ -219,7 +219,7 @@ fun CardsScreen(
                                         modifier = Modifier.matchParentSize(),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        CircularProgressIndicator()
+                                        AppInlineLoadingIndicator(size = 32.dp)
                                     }
                                 }
                             }
@@ -228,20 +228,20 @@ fun CardsScreen(
                 }
 
                 if (state.isInitialLoading && state.cards.isEmpty()) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    AppInlineLoadingIndicator(modifier = Modifier.align(Alignment.Center))
                 }
             }
         }
         }
 
-        ExtendedFloatingActionButton(
+        AppExtendedFab(
             onClick = viewModel::openCreate,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
             containerColor = colors.addActionButton,
             contentColor = colors.onAddActionButton,
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            icon = Icons.Filled.Add,
             text = { Text(stringResource(R.string.action_add_card)) },
         )
     }

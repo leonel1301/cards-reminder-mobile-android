@@ -1,6 +1,7 @@
 package com.lenaralabs.cardsreminder.app
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -16,8 +17,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,12 +24,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.analytics.AnalyticsScreens
@@ -38,9 +39,10 @@ import com.lenaralabs.cardsreminder.feature.calendar.CalendarScreen
 import com.lenaralabs.cardsreminder.feature.cards.CardsScreen
 import com.lenaralabs.cardsreminder.feature.profile.ProfileScreen
 import com.lenaralabs.cardsreminder.feature.timeline.TimelineScreen
-import com.lenaralabs.cardsreminder.ui.animation.AppMotion
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 private enum class AppTab(
     @param:StringRes val labelRes: Int,
@@ -68,9 +70,27 @@ private fun AppTab.analyticsScreenName(): String = when (this) {
 @Composable
 fun MainAppContent() {
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
-    val analyticsTracker = (LocalContext.current.applicationContext as CardsReminderApp).analyticsTracker
+    var visitedTabNames by rememberSaveable { mutableStateOf(listOf(AppTab.Today.name)) }
+    val application = LocalContext.current.applicationContext as CardsReminderApp
+    val analyticsTracker = application.analyticsTracker
+
+    LaunchedEffect(Unit) {
+        coroutineScope {
+            if (application.cardsRepository.cards.value.isEmpty()) {
+                val cardsJob = async { application.cardsRepository.fetchCards(silentUnlessEmpty = true) }
+                val dashboardJob = async {
+                    application.paymentsRepository.fetchDashboard(silentUnlessEmpty = true)
+                }
+                cardsJob.await()
+                dashboardJob.await()
+            } else if (!application.paymentsRepository.hasCachedDashboard) {
+                application.paymentsRepository.fetchDashboard(silentUnlessEmpty = true)
+            }
+        }
+    }
 
     LaunchedEffect(selectedTab) {
+        visitedTabNames = (visitedTabNames + selectedTab.name).distinct()
         analyticsTracker.logScreenView(selectedTab.analyticsScreenName())
     }
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -105,19 +125,29 @@ fun MainAppContent() {
             }
         },
     ) { innerPadding ->
-        AnimatedContent(
-            targetState = selectedTab,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            transitionSpec = { AppMotion.navFadeIn() togetherWith AppMotion.navFadeOut() },
-            label = "mainTab",
-        ) { tab ->
-            when (tab) {
-                AppTab.Today -> TimelineScreen(modifier = Modifier.fillMaxSize())
-                AppTab.Calendar -> CalendarScreen(modifier = Modifier.fillMaxSize())
-                AppTab.Cards -> CardsScreen(modifier = Modifier.fillMaxSize())
-                AppTab.Profile -> ProfileScreen(modifier = Modifier.fillMaxSize())
+        ) {
+            AppTab.entries.forEach { tab ->
+                if (tab.name !in visitedTabNames) return@forEach
+
+                val isSelected = selectedTab == tab
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(if (isSelected) 1f else 0f)
+                        .graphicsLayer { alpha = if (isSelected) 1f else 0f },
+                ) {
+                    when (tab) {
+                        AppTab.Today -> TimelineScreen(modifier = Modifier.fillMaxSize())
+                        AppTab.Calendar -> CalendarScreen(modifier = Modifier.fillMaxSize())
+                        AppTab.Cards -> CardsScreen(modifier = Modifier.fillMaxSize())
+                        AppTab.Profile -> ProfileScreen(modifier = Modifier.fillMaxSize())
+                    }
+                }
             }
         }
     }

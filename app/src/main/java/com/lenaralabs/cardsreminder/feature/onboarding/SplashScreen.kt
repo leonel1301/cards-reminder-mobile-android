@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.ui.animation.AppMotion
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 import kotlinx.coroutines.delay
@@ -136,10 +136,9 @@ fun SplashScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                CircularProgressIndicator(
-                    modifier = Modifier.size(28.dp),
+                AppInlineLoadingIndicator(
+                    size = 48.dp,
                     color = colors.primaryAction,
-                    strokeWidth = 3.dp,
                 )
             }
         }

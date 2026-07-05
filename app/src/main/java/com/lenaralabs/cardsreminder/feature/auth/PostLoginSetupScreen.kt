@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.util.AppLinks
+import com.lenaralabs.cardsreminder.ui.components.AppLoadingIndicator
 import com.lenaralabs.cardsreminder.ui.components.AuthGradientBackground
 import com.lenaralabs.cardsreminder.core.analytics.AnalyticsScreens
 import com.lenaralabs.cardsreminder.core.analytics.TrackScreen
@@ -203,7 +203,7 @@ fun PostLoginSetupScreen(
                         .background(Color.Black.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = colors.primaryAction)
+                    AppLoadingIndicator(color = colors.primaryAction)
                 }
             }
         }

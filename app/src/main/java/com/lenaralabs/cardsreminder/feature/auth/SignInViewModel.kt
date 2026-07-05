@@ -19,11 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class SignInUiState(
-    val isSigningIn: Boolean = false,
-    val errorMessage: String? = null,
-)
-
 class SignInViewModel(
     private val authRepository: AuthRepository,
 ) : ViewModel() {
@@ -39,7 +34,7 @@ class SignInViewModel(
         signInFailedMessage: String,
     ) {
         viewModelScope.launch {
-            _uiState.value = SignInUiState(errorMessage = null)
+            _uiState.value = SignInUiState(isSigningIn = true)
 
             val credentialResult = runCatching {
                 val googleIdOption = GetGoogleIdOption.Builder()
@@ -52,7 +47,6 @@ class SignInViewModel(
                     .addCredentialOption(googleIdOption)
                     .build()
 
-                // No mostrar overlay aquí: Credential Manager abre su propio picker.
                 credentialManager.getCredential(
                     context = context,
                     request = request,
@@ -68,7 +62,6 @@ class SignInViewModel(
                 return@launch
             }
 
-            _uiState.value = SignInUiState(isSigningIn = true)
             handleCredential(
                 credential = credentialResult.getOrThrow().credential,
                 signInFailedMessage = signInFailedMessage,

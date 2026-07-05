@@ -23,7 +23,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsOff
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,6 +53,7 @@ import com.lenaralabs.cardsreminder.BuildConfig
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.notifications.NotificationAuthorizationStatus
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
 import com.lenaralabs.cardsreminder.ui.components.AppSwitch
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
@@ -236,7 +236,7 @@ fun NotificationsSettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.padding(4.dp))
+                    AppInlineLoadingIndicator(size = 32.dp)
                     Text(
                         text = stringResource(R.string.notifications_syncing),
                         style = MaterialTheme.typography.bodySmall,

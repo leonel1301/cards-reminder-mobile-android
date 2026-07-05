@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,6 +46,7 @@ import com.lenaralabs.cardsreminder.core.model.ApiCardCycle
 import com.lenaralabs.cardsreminder.core.model.ApiCardStatus
 import com.lenaralabs.cardsreminder.core.model.ApiPayment
 import com.lenaralabs.cardsreminder.core.util.DateFormatUtils
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.async
@@ -202,7 +202,7 @@ fun CardPaymentsBottomSheet(
             }
 
             if (isLoading && status == null) {
-                CircularProgressIndicator(
+                AppInlineLoadingIndicator(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .padding(48.dp),
@@ -397,7 +397,10 @@ private fun PendingPaymentSection(
                     ),
                 ) {
                     if (isMarkingPaid) {
-                        CircularProgressIndicator()
+                        AppInlineLoadingIndicator(
+                            size = 24.dp,
+                            color = androidx.compose.ui.graphics.Color.White,
+                        )
                     } else {
                         Text(stringResource(R.string.payments_mark_paid))
                     }

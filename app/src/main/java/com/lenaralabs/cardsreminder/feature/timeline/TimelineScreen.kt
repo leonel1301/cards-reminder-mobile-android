@@ -16,13 +16,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +41,8 @@ import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.feature.cards.CardPaymentsBottomSheet
 import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
 import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
+import com.lenaralabs.cardsreminder.ui.components.AppPullToRefreshBox
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,7 +127,7 @@ fun TimelineScreen(
             onFeelingClick = viewModel::openFeelingSheet,
         )
 
-        PullToRefreshBox(
+        AppPullToRefreshBox(
             isRefreshing = state.isPullRefreshing,
             onRefresh = viewModel::refresh,
             modifier = Modifier.fillMaxSize(),
@@ -237,7 +237,7 @@ fun TimelineScreen(
                                         style = RevealStyle.Event,
                                         modifier = Modifier
                                             .padding(horizontal = 16.dp)
-                                            .padding(bottom = 14.dp),
+                                            .padding(bottom = 8.dp),
                                     ) {
                                         TimelineEventListItem(
                                             event = event,
@@ -253,7 +253,7 @@ fun TimelineScreen(
                 }
 
                 if (state.isInitialLoading) {
-                    CircularProgressIndicator(
+                    AppInlineLoadingIndicator(
                         modifier = Modifier.align(Alignment.Center),
                     )
                 }

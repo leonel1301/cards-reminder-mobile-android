@@ -34,8 +34,6 @@ import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,8 +58,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,6 +65,7 @@ import com.lenaralabs.cardsreminder.core.analytics.AnalyticsTracker
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.auth.AuthRepository
+import com.lenaralabs.cardsreminder.ui.components.AppExpressiveLinearProgressIndicator
 import com.lenaralabs.cardsreminder.ui.components.AuthGradientBackground
 import com.lenaralabs.cardsreminder.ui.components.PoweredByLenaraFooter
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
@@ -137,11 +134,7 @@ fun SignInScreen(
         animationSpec = tween(450, easing = FastOutSlowInEasing),
         label = "footerAlpha",
     )
-    val loadingAlpha by animateFloatAsState(
-        targetValue = if (uiState.isSigningIn) 1f else 0f,
-        animationSpec = tween(AppMotion.OVERLAY_DURATION_MS, easing = FastOutSlowInEasing),
-        label = "loadingAlpha",
-    )
+    val googleButtonContentColor = if (isDarkTheme) Color.White else Color.Black
 
     AuthGradientBackground(
         isDarkTheme = isDarkTheme,
@@ -264,19 +257,28 @@ fun SignInScreen(
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colors.cardSurface,
-                            contentColor = if (isDarkTheme) Color.White else Color.Black,
+                            contentColor = googleButtonContentColor,
+                            disabledContainerColor = colors.cardSurface,
+                            disabledContentColor = googleButtonContentColor,
                         ),
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.google_g),
-                            contentDescription = null,
-                            modifier = Modifier.size(56.dp),
-                        )
-                        Spacer(modifier = Modifier.size(12.dp))
-                        Text(
-                            text = stringResource(R.string.sign_in_continue_google),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                        if (uiState.isSigningIn) {
+                            AppExpressiveLinearProgressIndicator(
+                                color = colors.primaryAction,
+                                trackColor = colors.defaultBorder,
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(R.drawable.google_g),
+                                contentDescription = null,
+                                modifier = Modifier.size(56.dp),
+                            )
+                            Spacer(modifier = Modifier.size(12.dp))
+                            Text(
+                                text = stringResource(R.string.sign_in_continue_google),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
                     }
                 }
             }
@@ -288,33 +290,6 @@ fun SignInScreen(
                     .padding(bottom = 16.dp)
                     .alpha(footerAlpha),
             )
-        }
-    }
-
-    if (uiState.isSigningIn) {
-        Dialog(
-            onDismissRequest = {},
-            properties = DialogProperties(
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false,
-            ),
-        ) {
-            ElevatedCard(
-                modifier = Modifier.alpha(loadingAlpha),
-                shape = RoundedCornerShape(20.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    CircularProgressIndicator(color = colors.primaryAction)
-                    Text(
-                        text = stringResource(R.string.sign_in_loading),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
         }
     }
 }

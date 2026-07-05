@@ -85,7 +85,7 @@ private fun BarRow(bar: CardBarDisplay) {
     ) {
         if (bar.showBar) {
             val shape = periodBarShape(bar.isPeriodStart, bar.isPeriodEnd)
-            val barColor = bar.color.copy(alpha = barOpacity(bar, isBar = true))
+            val barColor = bar.color.copy(alpha = barOpacity(bar))
 
             Box(
                 modifier = Modifier
@@ -129,7 +129,7 @@ private fun BarRow(bar: CardBarDisplay) {
     }
 }
 
-private fun barOpacity(bar: CardBarDisplay, isBar: Boolean): Float {
+private fun barOpacity(bar: CardBarDisplay): Float {
     if (bar.isDimmed) return 0.12f
     if (bar.barHighlighted) return 0.75f
     return 0.35f

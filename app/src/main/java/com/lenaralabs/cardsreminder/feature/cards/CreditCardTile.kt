@@ -1,5 +1,6 @@
 package com.lenaralabs.cardsreminder.feature.cards
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,8 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +46,8 @@ import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.model.ApiCard
 import com.lenaralabs.cardsreminder.core.model.ApiCardStatus
 import com.lenaralabs.cardsreminder.core.util.isLightForegroundPreferred
+import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenu
+import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenuItem
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @Composable
@@ -142,40 +143,46 @@ fun CreditCardTile(
                             )
                         }
 
-                        DropdownMenu(
+                        AppDropdownMenu(
                             expanded = isMenuExpanded,
                             onDismissRequest = { onMenuExpandedChange(false) },
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.payments_view_history)) },
-                                onClick = {
-                                    onMenuExpandedChange(false)
-                                    onOpenPayments()
-                                },
-                            )
-                            if (card.isActive && onMarkPaid != null && !isPaidThisCycle) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.action_pay)) },
-                                    onClick = {
+                            val menuActions = buildList {
+                                add(
+                                    MenuAction(R.string.payments_view_history) {
                                         onMenuExpandedChange(false)
-                                        onMarkPaid()
+                                        onOpenPayments()
+                                    },
+                                )
+                                if (card.isActive && onMarkPaid != null && !isPaidThisCycle) {
+                                    add(
+                                        MenuAction(R.string.action_pay) {
+                                            onMenuExpandedChange(false)
+                                            onMarkPaid()
+                                        },
+                                    )
+                                }
+                                add(
+                                    MenuAction(R.string.screen_edit_card_title) {
+                                        onMenuExpandedChange(false)
+                                        onEdit()
+                                    },
+                                )
+                                add(
+                                    MenuAction(R.string.action_delete_card) {
+                                        onMenuExpandedChange(false)
+                                        onDelete()
                                     },
                                 )
                             }
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.screen_edit_card_title)) },
-                                onClick = {
-                                    onMenuExpandedChange(false)
-                                    onEdit()
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.action_delete_card)) },
-                                onClick = {
-                                    onMenuExpandedChange(false)
-                                    onDelete()
-                                },
-                            )
+                            menuActions.forEachIndexed { index, action ->
+                                AppDropdownMenuItem(
+                                    index = index,
+                                    count = menuActions.size,
+                                    text = { Text(stringResource(action.labelRes)) },
+                                    onClick = action.onClick,
+                                )
+                            }
                         }
                     }
                 }
@@ -326,6 +333,11 @@ private fun PayActionButton(onClick: () -> Unit) {
         )
     }
 }
+
+private data class MenuAction(
+    @param:StringRes val labelRes: Int,
+    val onClick: () -> Unit,
+)
 
 @Composable
 private fun PaidIndicator() {

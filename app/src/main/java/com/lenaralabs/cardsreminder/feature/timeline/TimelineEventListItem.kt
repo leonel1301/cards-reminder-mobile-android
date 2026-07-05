@@ -1,32 +1,35 @@
 package com.lenaralabs.cardsreminder.feature.timeline
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.ContentCut
-import androidx.compose.material.icons.outlined.NotificationsActive
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Verified
-import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,14 +39,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.lenaralabs.cardsreminder.R
-import com.lenaralabs.cardsreminder.feature.cards.CardStatusBadge
+import com.lenaralabs.cardsreminder.core.model.ApiCardStatus
+import com.lenaralabs.cardsreminder.core.model.CardPaymentStatusKind
+import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenu
+import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenuItem
+import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+
+private val ItemShape = RoundedCornerShape(12.dp)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -59,110 +71,189 @@ fun TimelineEventListItem(
     var menuExpanded by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxWidth()) {
-        ListItem(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .height(IntrinsicSize.Min)
+                .clip(ItemShape)
+                .background(colors.sheetItemSurface)
                 .combinedClickable(
                     onClick = onOpenPayments,
                     onLongClick = { menuExpanded = true },
                 ),
-            colors = ListItemDefaults.colors(containerColor = colors.sheetItemSurface),
-            leadingContent = {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(kindColors.background),
-                    contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(5.dp)
+                    .fillMaxHeight()
+                    .background(event.card.color),
+            )
+
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 10.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    Icon(
-                        imageVector = event.kind.icon,
-                        contentDescription = null,
-                        tint = kindColors.foreground,
-                        modifier = Modifier.size(18.dp),
+                    Text(
+                        text = stringResource(event.kind.titleRes),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                }
-            },
-            headlineContent = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
                         Text(
-                            text = stringResource(event.kind.titleRes),
+                            text = event.card.name,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
-                        Text(
-                            text = timelineEventSubtitle(event),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = colors.secondaryText,
-                        )
+                        if (event.card.lastFourDigits != "0000") {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    repeat(4) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(3.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.Black),
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = event.card.lastFourDigits,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = colors.secondaryText,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
                     }
-                    CardStatusBadge(status = event.status)
-                }
-            },
-            supportingContent = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                ) {
+
                     Text(
-                        text = event.card.name,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                    )
-                    Text(
-                        text = event.card.maskedNumber,
+                        text = timelineEventSubtitle(event),
                         style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = colors.secondaryText,
+                        color = kindColors.foreground.copy(alpha = 0.85f),
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-            },
-        )
+
+                TimelineEventStatusChip(
+                    status = event.status,
+                    kind = event.kind,
+                )
+            }
+        }
 
         if (isMarkingPaid) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(ItemShape)
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                AppInlineLoadingIndicator(size = 32.dp)
             }
         }
 
-        DropdownMenu(
+        AppDropdownMenu(
             expanded = menuExpanded,
             onDismissRequest = { menuExpanded = false },
         ) {
-            if (event.canMarkPaid()) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.payments_mark_paid)) },
-                    onClick = {
+            val menuActions = buildList {
+                if (event.canMarkPaid()) {
+                    add(
+                        TimelineMenuAction(R.string.payments_mark_paid) {
+                            menuExpanded = false
+                            onMarkPaid()
+                        },
+                    )
+                }
+                add(
+                    TimelineMenuAction(R.string.payments_view_history) {
                         menuExpanded = false
-                        onMarkPaid()
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Filled.CheckCircle, contentDescription = null)
+                        onOpenPayments()
                     },
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.payments_view_history)) },
-                onClick = {
-                    menuExpanded = false
-                    onOpenPayments()
-                },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Schedule, contentDescription = null)
-                },
+            menuActions.forEachIndexed { index, action ->
+                AppDropdownMenuItem(
+                    index = index,
+                    count = menuActions.size,
+                    text = { Text(stringResource(action.labelRes)) },
+                    onClick = action.onClick,
+                    leadingIcon = {
+                        when (action.labelRes) {
+                            R.string.payments_mark_paid -> Icon(Icons.Filled.CheckCircle, contentDescription = null)
+                            else -> Icon(Icons.Filled.Schedule, contentDescription = null)
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimelineEventStatusChip(
+    status: ApiCardStatus,
+    kind: TimelineEventKind,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.cardsReminder
+    val kindColors = kind.colors(colors)
+    val labelRes = when (status.kind) {
+        CardPaymentStatusKind.Paid -> R.string.card_status_paid
+        CardPaymentStatusKind.Overdue -> R.string.card_status_overdue
+        CardPaymentStatusKind.Urgent -> R.string.card_status_urgent
+        CardPaymentStatusKind.DueSoon -> R.string.card_status_due_soon
+        CardPaymentStatusKind.OptimalDay -> R.string.card_status_optimal_day
+        CardPaymentStatusKind.OnTrack -> R.string.card_status_on_track
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = kindColors.background,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(
+                imageVector = kind.statusIcon,
+                contentDescription = null,
+                tint = kindColors.foreground,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(
+                text = stringResource(labelRes),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = kindColors.foreground,
+                maxLines = 1,
             )
         }
     }
@@ -203,16 +294,16 @@ private data class KindColors(
     val foreground: androidx.compose.ui.graphics.Color,
 )
 
-private val TimelineEventKind.icon: ImageVector
+private val TimelineEventKind.statusIcon: ImageVector
     get() = when (this) {
-        TimelineEventKind.Overdue -> Icons.Outlined.Warning
-        TimelineEventKind.PaymentDueToday -> Icons.Outlined.NotificationsActive
-        TimelineEventKind.Urgent -> Icons.Outlined.Schedule
-        TimelineEventKind.DueSoon -> Icons.Outlined.CalendarMonth
-        TimelineEventKind.OptimalToday -> Icons.Outlined.AutoAwesome
+        TimelineEventKind.Overdue -> Icons.Filled.Error
+        TimelineEventKind.PaymentDueToday -> Icons.Filled.NotificationsActive
+        TimelineEventKind.Urgent -> Icons.Filled.Schedule
+        TimelineEventKind.DueSoon -> Icons.Filled.Event
+        TimelineEventKind.OptimalToday -> Icons.Filled.AutoAwesome
         TimelineEventKind.CycleEndsToday -> Icons.Outlined.ContentCut
-        TimelineEventKind.Paid -> Icons.Outlined.Verified
-        TimelineEventKind.OnTrack -> Icons.Filled.CheckCircle
+        TimelineEventKind.Paid -> Icons.Filled.Verified
+        TimelineEventKind.OnTrack -> Icons.Filled.TaskAlt
     }
 
 private fun TimelineEventKind.colors(
@@ -237,3 +328,8 @@ private fun TimelineEventKind.colors(
         TimelineEventKind.OnTrack -> KindColors(palette.onTrackStateBackground, palette.onTrackStateForeground)
     }
 }
+
+private data class TimelineMenuAction(
+    @param:StringRes val labelRes: Int,
+    val onClick: () -> Unit,
+)
