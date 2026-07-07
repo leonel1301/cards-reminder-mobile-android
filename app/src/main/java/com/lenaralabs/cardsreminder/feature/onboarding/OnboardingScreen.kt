@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +50,7 @@ import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
 import com.lenaralabs.cardsreminder.core.analytics.AnalyticsScreens
 import com.lenaralabs.cardsreminder.core.analytics.TrackScreen
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import com.lenaralabs.cardsreminder.ui.theme.isDarkTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -64,10 +64,10 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
     val colors = MaterialTheme.cardsReminder
-    val isDarkTheme = isSystemInDarkTheme()
+    val darkTheme = isDarkTheme()
     val isLastPage = pagerState.currentPage == pages.lastIndex
 
-    AuthGradientBackground(isDarkTheme = isDarkTheme, modifier = modifier) {
+    AuthGradientBackground(isDarkTheme = darkTheme, modifier = modifier) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,

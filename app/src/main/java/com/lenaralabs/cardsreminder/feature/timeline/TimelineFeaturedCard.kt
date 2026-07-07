@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.dp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.model.ApiCard
 import com.lenaralabs.cardsreminder.core.model.ApiCardStatus
+import com.lenaralabs.cardsreminder.ui.theme.adaptedCardAccent
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import com.lenaralabs.cardsreminder.ui.theme.isDarkTheme
 
 @Composable
 fun TimelineFeaturedCard(
@@ -42,6 +44,9 @@ fun TimelineFeaturedCard(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.cardsReminder
+    val darkTheme = isDarkTheme()
+    val cardPreviewShape = RoundedCornerShape(12.dp)
+    val cardPreviewColor = card.color.adaptedCardAccent(darkTheme)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -92,8 +97,8 @@ fun TimelineFeaturedCard(
             ) {
                 Surface(
                     modifier = Modifier.size(width = 56.dp, height = 36.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = card.color,
+                    shape = cardPreviewShape,
+                    color = cardPreviewColor,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.CreditCard,

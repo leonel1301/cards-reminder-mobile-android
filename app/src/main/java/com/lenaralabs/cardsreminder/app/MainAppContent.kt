@@ -12,11 +12,11 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +30,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.lenaralabs.cardsreminder.CardsReminderApp
 import com.lenaralabs.cardsreminder.R
@@ -39,6 +38,7 @@ import com.lenaralabs.cardsreminder.feature.calendar.CalendarScreen
 import com.lenaralabs.cardsreminder.feature.cards.CardsScreen
 import com.lenaralabs.cardsreminder.feature.profile.ProfileScreen
 import com.lenaralabs.cardsreminder.feature.timeline.TimelineScreen
+import com.lenaralabs.cardsreminder.ui.components.appTabSafeArea
 import com.lenaralabs.cardsreminder.ui.theme.CardsreminderTheme
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 import kotlinx.coroutines.async
@@ -67,6 +67,7 @@ private fun AppTab.analyticsScreenName(): String = when (this) {
     AppTab.Profile -> AnalyticsScreens.PROFILE
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @Composable
 fun MainAppContent() {
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
@@ -93,43 +94,44 @@ fun MainAppContent() {
         visitedTabNames = (visitedTabNames + selectedTab.name).distinct()
         analyticsTracker.logScreenView(selectedTab.analyticsScreenName())
     }
+
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val colors = MaterialTheme.cardsReminder
+    val navigationItemColors = NavigationSuiteDefaults.itemColors(
+        navigationBarItemColors = NavigationBarItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.primary,
+            selectedTextColor = MaterialTheme.colorScheme.primary,
+            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+    )
 
-    Scaffold(
+    NavigationSuiteScaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = colors.appBackground,
-        bottomBar = {
-            NavigationBar(
-                containerColor = colors.appBackground,
-                tonalElevation = 0.dp,
-            ) {
-                AppTab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        ),
-                        icon = {
-                            Icon(
-                                imageVector = tab.icon(isDarkTheme),
-                                contentDescription = stringResource(tab.labelRes),
-                            )
-                        },
-                        label = { Text(stringResource(tab.labelRes)) },
-                    )
-                }
+        navigationSuiteColors = NavigationSuiteDefaults.colors(
+            navigationBarContainerColor = colors.appBackground,
+            navigationRailContainerColor = colors.appBackground,
+        ),
+        navigationSuiteItems = {
+            AppTab.entries.forEach { tab ->
+                item(
+                    selected = selectedTab == tab,
+                    onClick = { selectedTab = tab },
+                    colors = navigationItemColors,
+                    icon = {
+                        Icon(
+                            imageVector = tab.icon(isDarkTheme),
+                            contentDescription = stringResource(tab.labelRes),
+                        )
+                    },
+                    label = { Text(stringResource(tab.labelRes)) },
+                )
             }
         },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
+    ) {
+        val tabModifier = Modifier.fillMaxSize().appTabSafeArea()
+
+        Box(modifier = Modifier.fillMaxSize()) {
             AppTab.entries.forEach { tab ->
                 if (tab.name !in visitedTabNames) return@forEach
 
@@ -142,10 +144,10 @@ fun MainAppContent() {
                         .graphicsLayer { alpha = if (isSelected) 1f else 0f },
                 ) {
                     when (tab) {
-                        AppTab.Today -> TimelineScreen(modifier = Modifier.fillMaxSize())
-                        AppTab.Calendar -> CalendarScreen(modifier = Modifier.fillMaxSize())
-                        AppTab.Cards -> CardsScreen(modifier = Modifier.fillMaxSize())
-                        AppTab.Profile -> ProfileScreen(modifier = Modifier.fillMaxSize())
+                        AppTab.Today -> TimelineScreen(modifier = tabModifier)
+                        AppTab.Calendar -> CalendarScreen(modifier = tabModifier)
+                        AppTab.Cards -> CardsScreen(modifier = tabModifier)
+                        AppTab.Profile -> ProfileScreen(modifier = tabModifier)
                     }
                 }
             }

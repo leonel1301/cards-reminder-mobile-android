@@ -152,27 +152,9 @@ fun ProfileScreen(
         )
     }
 
-    if (state.showDiscardOwnerDialog) {
-        AlertDialog(
-            onDismissRequest = viewModel::dismissDiscardDialogs,
-            title = { Text(stringResource(R.string.form_discard_title)) },
-            text = { Text(stringResource(R.string.form_discard_message)) },
-            confirmButton = {
-                TextButton(onClick = viewModel::confirmDiscardOwner) {
-                    Text(stringResource(R.string.form_discard_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissDiscardDialogs) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
-        )
-    }
-
     if (state.showDiscardFeedbackDialog) {
         AlertDialog(
-            onDismissRequest = viewModel::dismissDiscardDialogs,
+            onDismissRequest = viewModel::dismissDiscardFeedbackDialog,
             title = { Text(stringResource(R.string.form_discard_title)) },
             text = { Text(stringResource(R.string.form_discard_message)) },
             confirmButton = {
@@ -181,7 +163,7 @@ fun ProfileScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::dismissDiscardDialogs) {
+                TextButton(onClick = viewModel::dismissDiscardFeedbackDialog) {
                     Text(stringResource(R.string.action_cancel))
                 }
             },

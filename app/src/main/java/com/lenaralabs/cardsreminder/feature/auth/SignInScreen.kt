@@ -15,7 +15,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,6 +73,7 @@ import com.lenaralabs.cardsreminder.core.analytics.TrackScreen
 import com.lenaralabs.cardsreminder.ui.animation.AppMotion
 import com.lenaralabs.cardsreminder.ui.animation.pressScaleEffect
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import com.lenaralabs.cardsreminder.ui.theme.isDarkTheme
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +89,7 @@ fun SignInScreen(
     TrackScreen(AnalyticsScreens.SIGN_IN)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
-    val isDarkTheme = isSystemInDarkTheme()
+    val darkTheme = isDarkTheme()
     val context = LocalContext.current
     val webClientId = stringResource(R.string.default_web_client_id)
     val noGoogleAccountMessage = stringResource(R.string.error_no_google_account)
@@ -111,22 +111,22 @@ fun SignInScreen(
 
     val headerOffset by animateFloatAsState(
         targetValue = if (headerVisible) 0f else 28f,
-        animationSpec = AppMotion.signInSpring,
+        animationSpec = AppMotion.expressiveSlowSpatialSpring,
         label = "headerOffset",
     )
     val headerAlpha by animateFloatAsState(
         targetValue = if (headerVisible) 1f else 0f,
-        animationSpec = AppMotion.signInSpring,
+        animationSpec = AppMotion.expressiveSlowSpatialSpring,
         label = "headerAlpha",
     )
     val bodyOffset by animateFloatAsState(
         targetValue = if (bodyVisible) 0f else 22f,
-        animationSpec = AppMotion.signInSpring,
+        animationSpec = AppMotion.expressiveSlowSpatialSpring,
         label = "bodyOffset",
     )
     val bodyAlpha by animateFloatAsState(
         targetValue = if (bodyVisible) 1f else 0f,
-        animationSpec = AppMotion.signInSpring,
+        animationSpec = AppMotion.expressiveSlowSpatialSpring,
         label = "bodyAlpha",
     )
     val footerAlpha by animateFloatAsState(
@@ -134,10 +134,10 @@ fun SignInScreen(
         animationSpec = tween(450, easing = FastOutSlowInEasing),
         label = "footerAlpha",
     )
-    val googleButtonContentColor = if (isDarkTheme) Color.White else Color.Black
+    val googleButtonContentColor = if (darkTheme) Color.White else Color.Black
 
     AuthGradientBackground(
-        isDarkTheme = isDarkTheme,
+        isDarkTheme = darkTheme,
         modifier = modifier,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -156,17 +156,18 @@ fun SignInScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(modifier = Modifier.offset(y = headerOffset.dp)) {
-                    if (!isDarkTheme) {
+                    if (!darkTheme) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(28.dp),
                             color = colors.headerSurface,
                             tonalElevation = 2.dp,
                         ) {
-                            SignInBrandContent()
+                            SignInBrandContent(isDarkTheme = darkTheme)
                         }
                     } else {
                         SignInBrandContent(
+                            isDarkTheme = darkTheme,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -296,9 +297,9 @@ fun SignInScreen(
 
 @Composable
 private fun SignInBrandContent(
+    isDarkTheme: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
     val titleColor = if (isDarkTheme) MaterialTheme.colorScheme.onBackground else Color.White
     val subtitleColor = if (isDarkTheme) {
         MaterialTheme.cardsReminder.secondaryText

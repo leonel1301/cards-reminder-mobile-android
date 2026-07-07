@@ -1,5 +1,7 @@
 package com.lenaralabs.cardsreminder.feature.calendar
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
@@ -26,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -46,7 +50,10 @@ fun CalendarScreen(
 ) {
     val application = LocalContext.current.applicationContext as CardsReminderApp
     val viewModel: CalendarViewModel = viewModel(
-        factory = CalendarViewModel.Factory(application.cardsRepository),
+        factory = CalendarViewModel.Factory(
+            application.cardsRepository,
+            application.paymentsRepository,
+        ),
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
@@ -87,25 +94,20 @@ fun CalendarScreen(
                     )
                 }
 
-                MonthHeader(
-                    title = state.monthYearTitle,
-                    onPreviousMonth = { viewModel.changeMonth(-1) },
-                    onNextMonth = { viewModel.changeMonth(1) },
-                )
-
-                WeekdayLabelsRow()
-
-                HorizontalDivider(color = colors.defaultBorder)
-
                 if (state.activeCards.isEmpty() && !state.isInitialLoading) {
                     CalendarEmptyState()
                 } else if (state.activeCards.isNotEmpty()) {
-                    CalendarGrid(
+                    CalendarMonthInsightsBar(insights = state.monthInsights)
+
+                    CalendarMonthCard(
                         state = state,
                         viewModel = viewModel,
                     )
 
-                    HorizontalDivider(color = colors.defaultBorder)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(top = 8.dp),
+                        color = colors.defaultBorder,
+                    )
 
                     CalendarLegendRows(
                         cards = state.activeCards,
@@ -129,6 +131,53 @@ fun CalendarScreen(
 }
 
 @Composable
+private fun CalendarMonthCard(
+    state: CalendarUiState,
+    viewModel: CalendarViewModel,
+) {
+    val colors = MaterialTheme.cardsReminder
+    val cardShape = RoundedCornerShape(16.dp)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(cardShape)
+            .border(1.dp, colors.defaultBorder, cardShape)
+            .background(colors.sheetItemSurface),
+    ) {
+        MonthHeader(
+            title = state.monthYearTitle,
+            onPreviousMonth = { viewModel.changeMonth(-1) },
+            onNextMonth = { viewModel.changeMonth(1) },
+        )
+
+        state.selectedDay?.let { day ->
+            CalendarDayDetailPanel(
+                day = day,
+                events = state.selectedDayEvents,
+                onDismiss = viewModel::clearDaySelection,
+            )
+        }
+
+        WeekdayLabelsRow(
+            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+        )
+
+        HorizontalDivider(color = colors.defaultBorder.copy(alpha = 0.7f))
+
+        CalendarGrid(
+            state = state,
+            viewModel = viewModel,
+        )
+
+        HorizontalDivider(color = colors.defaultBorder.copy(alpha = 0.7f))
+
+        CalendarMiniLegend()
+    }
+}
+
+@Composable
 private fun MonthHeader(
     title: String,
     onPreviousMonth: () -> Unit,
@@ -137,7 +186,7 @@ private fun MonthHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onPreviousMonth) {
@@ -167,14 +216,16 @@ private fun MonthHeader(
 }
 
 @Composable
-private fun WeekdayLabelsRow() {
+private fun WeekdayLabelsRow(
+    modifier: Modifier = Modifier,
+) {
     val colors = MaterialTheme.cardsReminder
     val weekdaySymbols = CalendarBillingLogic.weekdaySymbols()
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 12.dp),
     ) {
         weekdaySymbols.forEach { symbol ->
             Text(
@@ -214,7 +265,7 @@ private fun CalendarGrid(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 8.dp)
+            .padding(horizontal = 8.dp, vertical = 10.dp)
             .pointerInput(state.year, state.month) {
                 var totalDrag = 0f
                 detectHorizontalDragGestures(
@@ -245,6 +296,8 @@ private fun CalendarGrid(
                                 day = day,
                                 isToday = viewModel.isToday(day, state),
                                 bars = barsByDay[day].orEmpty(),
+                                isSelected = state.selectedDay == day,
+                                onClick = { viewModel.onDayClick(day) },
                             )
                         } else {
                             Spacer(modifier = Modifier.height(52.dp))

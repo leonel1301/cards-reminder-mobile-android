@@ -75,7 +75,8 @@ data class CardsUiState(
     val showRemindersPrompt: Boolean = false,
     val showRemindersLaterInfo: Boolean = false,
     val showLastFourHelp: Boolean = false,
-    val pendingEditFromPayments: ApiCard? = null,
+    val showBillingDayHelp: Boolean = false,
+    val showPaymentDayHelp: Boolean = false,
     val initialLoadComplete: Boolean = false,
     val isPullRefreshing: Boolean = false,
 ) {
@@ -101,7 +102,8 @@ class CardsViewModel(
     private val showRemindersPrompt = MutableStateFlow(false)
     private val showRemindersLaterInfo = MutableStateFlow(false)
     private val showLastFourHelp = MutableStateFlow(false)
-    private val pendingEditFromPayments = MutableStateFlow<ApiCard?>(null)
+    private val showBillingDayHelp = MutableStateFlow(false)
+    private val showPaymentDayHelp = MutableStateFlow(false)
     private val initialLoadComplete = MutableStateFlow(false)
     private val isPullRefreshing = MutableStateFlow(false)
 
@@ -143,13 +145,29 @@ class CardsViewModel(
                     UiSnapshot2(quickPayCard, deletingId, markingId, form, discardDialog)
                 },
                 combine(
-                    showRemindersPrompt,
-                    showRemindersLaterInfo,
-                    showLastFourHelp,
-                    pendingEditFromPayments,
-                    initialLoadComplete,
-                ) { remindersPrompt, remindersLater, lastFourHelp, editFromPayments, loadComplete ->
-                    UiSnapshot3(remindersPrompt, remindersLater, lastFourHelp, editFromPayments, loadComplete)
+                    combine(
+                        showRemindersPrompt,
+                        showRemindersLaterInfo,
+                        showLastFourHelp,
+                    ) { remindersPrompt, remindersLater, lastFourHelp ->
+                        Triple(remindersPrompt, remindersLater, lastFourHelp)
+                    },
+                    combine(
+                        showBillingDayHelp,
+                        showPaymentDayHelp,
+                        initialLoadComplete,
+                    ) { billingHelp, paymentHelp, loadComplete ->
+                        Triple(billingHelp, paymentHelp, loadComplete)
+                    },
+                ) { helpFlags, loadFlags ->
+                    UiSnapshot3(
+                        remindersPrompt = helpFlags.first,
+                        remindersLater = helpFlags.second,
+                        lastFourHelp = helpFlags.third,
+                        billingDayHelp = loadFlags.first,
+                        paymentDayHelp = loadFlags.second,
+                        initialLoadComplete = loadFlags.third,
+                    )
                 },
                 isPullRefreshing,
             ) { data, ui1, ui2, ui3, pullRefreshing ->
@@ -172,7 +190,8 @@ class CardsViewModel(
                     remindersPrompt = ui3.remindersPrompt,
                     remindersLater = ui3.remindersLater,
                     lastFourHelp = ui3.lastFourHelp,
-                    editFromPayments = ui3.editFromPayments,
+                    billingDayHelp = ui3.billingDayHelp,
+                    paymentDayHelp = ui3.paymentDayHelp,
                     initialLoadComplete = ui3.initialLoadComplete,
                     isPullRefreshing = pullRefreshing,
                 )
@@ -227,7 +246,8 @@ class CardsViewModel(
         val remindersPrompt: Boolean,
         val remindersLater: Boolean,
         val lastFourHelp: Boolean,
-        val editFromPayments: ApiCard?,
+        val billingDayHelp: Boolean,
+        val paymentDayHelp: Boolean,
         val initialLoadComplete: Boolean,
     )
 
@@ -250,7 +270,8 @@ class CardsViewModel(
         remindersPrompt: Boolean,
         remindersLater: Boolean,
         lastFourHelp: Boolean,
-        editFromPayments: ApiCard?,
+        billingDayHelp: Boolean,
+        paymentDayHelp: Boolean,
         initialLoadComplete: Boolean,
         isPullRefreshing: Boolean,
     ): CardsUiState {
@@ -278,7 +299,8 @@ class CardsViewModel(
             showRemindersPrompt = remindersPrompt,
             showRemindersLaterInfo = remindersLater,
             showLastFourHelp = lastFourHelp,
-            pendingEditFromPayments = editFromPayments,
+            showBillingDayHelp = billingDayHelp,
+            showPaymentDayHelp = paymentDayHelp,
             initialLoadComplete = initialLoadComplete,
             isPullRefreshing = isPullRefreshing,
         )
@@ -358,27 +380,11 @@ class CardsViewModel(
     }
 
     fun dismissSheet() {
-        val pendingEdit = pendingEditFromPayments.value
-        activeSheet.value = if (pendingEdit != null) {
-            pendingEditFromPayments.value = null
-            CardsSheet.Edit(pendingEdit)
-        } else {
-            CardsSheet.None
-        }
+        activeSheet.value = CardsSheet.None
     }
 
     fun closeSheetCompletely() {
-        pendingEditFromPayments.value = null
         activeSheet.value = CardsSheet.None
-    }
-
-    fun editFromPayments(card: ApiCard) {
-        pendingEditFromPayments.value = card
-        activeSheet.value = CardsSheet.None
-        viewModelScope.launch {
-            delay(100)
-            openEdit(card)
-        }
     }
 
     fun updateForm(transform: (CardFormState) -> CardFormState) {
@@ -537,6 +543,22 @@ class CardsViewModel(
 
     fun dismissLastFourHelp() {
         showLastFourHelp.value = false
+    }
+
+    fun showBillingDayHelp() {
+        showBillingDayHelp.value = true
+    }
+
+    fun dismissBillingDayHelp() {
+        showBillingDayHelp.value = false
+    }
+
+    fun showPaymentDayHelp() {
+        showPaymentDayHelp.value = true
+    }
+
+    fun dismissPaymentDayHelp() {
+        showPaymentDayHelp.value = false
     }
 
     fun ownerDisplayName(owner: ApiOwner, selfFormat: String): String {

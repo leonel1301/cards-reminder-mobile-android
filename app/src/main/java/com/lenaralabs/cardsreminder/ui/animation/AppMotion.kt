@@ -1,7 +1,8 @@
 package com.lenaralabs.cardsreminder.ui.animation
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -11,9 +12,9 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.IntOffset
 
 object AppMotion {
     const val BASE_DURATION_MS = 450
@@ -29,96 +30,101 @@ object AppMotion {
 
     fun staggerDelay(index: Int): Int = index * STAGGER_STEP_MS
 
-    val gentleSpring = spring<Float>(
-        dampingRatio = 0.82f,
-        stiffness = Spring.StiffnessMediumLow,
+    val expressiveFastEffectsSpring = spring<Float>(
+        dampingRatio = 1.0f,
+        stiffness = 3800f,
     )
 
-    val splashSpring = spring<Float>(
-        dampingRatio = 0.75f,
-        stiffness = Spring.StiffnessMediumLow,
+    val expressiveFastSpatialSpring = spring<Float>(
+        dampingRatio = 0.6f,
+        stiffness = 800f,
     )
 
-    val signInSpring = spring<Float>(
-        dampingRatio = 0.82f,
-        stiffness = Spring.StiffnessLow,
+    val expressiveSlowSpatialSpring = spring<Float>(
+        dampingRatio = 0.8f,
+        stiffness = 200f,
     )
 
-    fun navFadeIn(): EnterTransition = fadeIn(
-        animationSpec = tween(NAV_DURATION_MS, easing = FastOutSlowInEasing),
-    )
+    @Composable
+    fun spatialSpec(): FiniteAnimationSpec<Float> = MaterialTheme.motionScheme.fastSpatialSpec()
 
-    fun navFadeOut(): ExitTransition = fadeOut(
-        animationSpec = tween(NAV_DURATION_MS, easing = FastOutSlowInEasing),
-    )
+    @Composable
+    fun spatialOffsetSpec(): FiniteAnimationSpec<IntOffset> = MaterialTheme.motionScheme.fastSpatialSpec()
 
+    @Composable
+    fun effectsSpec(): FiniteAnimationSpec<Float> = MaterialTheme.motionScheme.fastEffectsSpec()
+
+    @Composable
+    fun slowSpatialSpec(): FiniteAnimationSpec<Float> = MaterialTheme.motionScheme.slowSpatialSpec()
+
+    fun navFadeIn(): EnterTransition = fadeIn(animationSpec = expressiveFastEffectsSpring)
+
+    fun navFadeOut(): ExitTransition = fadeOut(animationSpec = expressiveFastEffectsSpring)
+
+    @Composable
     fun standardEnter(index: Int = 0): EnterTransition {
         val delay = staggerDelay(index)
-        return fadeIn(tween(BASE_DURATION_MS, delay, FastOutSlowInEasing)) +
+        return fadeIn(tween(delayMillis = delay, durationMillis = NAV_DURATION_MS)) +
             scaleIn(
                 initialScale = STANDARD_INITIAL_SCALE,
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
+                animationSpec = spatialSpec(),
             )
     }
 
+    @Composable
     fun standardExit(): ExitTransition =
-        fadeOut(tween(OVERLAY_DURATION_MS, easing = FastOutSlowInEasing)) +
+        fadeOut(animationSpec = effectsSpec()) +
             scaleOut(
                 targetScale = STANDARD_INITIAL_SCALE,
-                animationSpec = tween(OVERLAY_DURATION_MS, easing = FastOutSlowInEasing),
+                animationSpec = spatialSpec(),
             )
 
+    @Composable
     fun sectionEnter(index: Int = 0): EnterTransition {
         val delay = staggerDelay(index)
-        return fadeIn(tween(BASE_DURATION_MS, delay, FastOutSlowInEasing)) +
+        return fadeIn(tween(delayMillis = delay, durationMillis = NAV_DURATION_MS)) +
             scaleIn(
                 initialScale = SECTION_INITIAL_SCALE,
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
+                animationSpec = spatialSpec(),
             ) +
-            slideInVertically(
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
-            ) { it / 8 }
+            slideInVertically(animationSpec = spatialOffsetSpec()) { it / 8 }
     }
 
+    @Composable
     fun cardEnter(index: Int = 0): EnterTransition {
         val delay = staggerDelay(index)
-        return fadeIn(tween(BASE_DURATION_MS, delay, FastOutSlowInEasing)) +
+        return fadeIn(tween(delayMillis = delay, durationMillis = NAV_DURATION_MS)) +
             scaleIn(
                 initialScale = CARD_INITIAL_SCALE,
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
+                animationSpec = spatialSpec(),
             ) +
-            slideInVertically(
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
-            ) { it / 6 }
+            slideInVertically(animationSpec = spatialOffsetSpec()) { it / 6 }
     }
 
+    @Composable
     fun eventEnter(index: Int = 0): EnterTransition {
         val delay = staggerDelay(index)
-        return fadeIn(tween(BASE_DURATION_MS, delay, FastOutSlowInEasing)) +
+        return fadeIn(tween(delayMillis = delay, durationMillis = NAV_DURATION_MS)) +
             scaleIn(
                 initialScale = EVENT_INITIAL_SCALE,
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
+                animationSpec = spatialSpec(),
             ) +
-            slideInHorizontally(
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
-            ) { it / 4 }
+            slideInHorizontally(animationSpec = spatialOffsetSpec()) { it / 4 }
     }
 
+    @Composable
     fun fromBottomEnter(index: Int = 0): EnterTransition {
         val delay = staggerDelay(index)
-        return fadeIn(tween(BASE_DURATION_MS, delay, FastOutSlowInEasing)) +
-            slideInVertically(
-                animationSpec = tween(BASE_DURATION_MS, delay, FastOutSlowInEasing),
-            ) { it / 3 }
+        return fadeIn(tween(delayMillis = delay, durationMillis = NAV_DURATION_MS)) +
+            slideInVertically(animationSpec = spatialOffsetSpec()) { it / 3 }
     }
 
+    @Composable
     fun slideOutEnd(): ExitTransition =
-        fadeOut(tween(OVERLAY_DURATION_MS, easing = FastOutSlowInEasing)) +
+        fadeOut(animationSpec = effectsSpec()) +
             scaleOut(
                 targetScale = STANDARD_INITIAL_SCALE,
-                animationSpec = tween(OVERLAY_DURATION_MS, easing = FastOutSlowInEasing),
+                animationSpec = spatialSpec(),
             ) +
-            slideOutHorizontally(
-                animationSpec = tween(OVERLAY_DURATION_MS, easing = FastOutSlowInEasing),
-            ) { it / 3 }
+            slideOutHorizontally(animationSpec = spatialOffsetSpec()) { it / 3 }
 }

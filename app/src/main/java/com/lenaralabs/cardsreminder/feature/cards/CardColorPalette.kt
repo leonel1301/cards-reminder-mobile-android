@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
@@ -19,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.lenaralabs.cardsreminder.core.util.toComposeColor
+import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -32,8 +36,14 @@ fun CardColorPalette(
     onSelectionChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = MaterialTheme.cardsReminder
+
     FlowRow(
-        modifier = modifier.padding(vertical = 4.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.sheetItemSurface)
+            .padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -41,6 +51,7 @@ fun CardColorPalette(
             val isSelected = CardPaletteOption.normalize(selection) == option.hex
             val color = option.hex.toComposeColor()
             val label = stringResource(option.nameRes)
+            val needsBorder = color.luminance() < 0.15f
 
             Box(
                 modifier = Modifier
@@ -48,8 +59,16 @@ fun CardColorPalette(
                     .clip(CircleShape)
                     .background(color)
                     .border(
-                        width = if (isSelected) 2.dp else 0.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                        width = when {
+                            isSelected -> 2.dp
+                            needsBorder -> 1.dp
+                            else -> 0.dp
+                        },
+                        color = when {
+                            isSelected -> MaterialTheme.colorScheme.onSurface
+                            needsBorder -> colors.defaultBorder
+                            else -> Color.Transparent
+                        },
                         shape = CircleShape,
                     )
                     .clickable { onSelectionChange(option.hex) }

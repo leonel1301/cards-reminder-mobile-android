@@ -53,7 +53,9 @@ import com.lenaralabs.cardsreminder.core.model.CardPaymentStatusKind
 import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenu
 import com.lenaralabs.cardsreminder.ui.components.AppDropdownMenuItem
 import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
+import com.lenaralabs.cardsreminder.ui.theme.adaptedCardAccent
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import com.lenaralabs.cardsreminder.ui.theme.isDarkTheme
 
 private val ItemShape = RoundedCornerShape(12.dp)
 
@@ -68,6 +70,9 @@ fun TimelineEventListItem(
 ) {
     val colors = MaterialTheme.cardsReminder
     val kindColors = event.kind.colors(colors)
+    val darkTheme = isDarkTheme()
+    val stripeShape = RoundedCornerShape(topStart = 3.dp, bottomStart = 3.dp)
+    val stripeColor = event.card.color.adaptedCardAccent(darkTheme)
     var menuExpanded by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxWidth()) {
@@ -86,7 +91,8 @@ fun TimelineEventListItem(
                 modifier = Modifier
                     .width(5.dp)
                     .fillMaxHeight()
-                    .background(event.card.color),
+                    .clip(stripeShape)
+                    .background(stripeColor, stripeShape),
             )
 
             Row(

@@ -1,13 +1,14 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.lenaralabs.cardsreminder.feature.calendar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,11 +18,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,7 +38,9 @@ import androidx.compose.ui.unit.sp
 import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.core.model.ApiCard
 import com.lenaralabs.cardsreminder.core.util.toComposeColor
+import com.lenaralabs.cardsreminder.ui.theme.adaptedCardAccent
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import com.lenaralabs.cardsreminder.ui.theme.isDarkTheme
 
 @Composable
 fun CalendarLegendRows(
@@ -45,30 +51,43 @@ fun CalendarLegendRows(
     onSelectionChange: (CalendarSelection?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = MaterialTheme.cardsReminder
+    val darkTheme = isDarkTheme()
 
     Column(
         modifier = modifier.padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         LegendSection(title = stringResource(R.string.calendar_legend_cards)) {
-            cards.forEach { card ->
-                CardTag(
+            ConnectedLegendGroup(itemCount = cards.size) { index ->
+                val card = cards[index]
+                val isSelected = selection is CalendarSelection.Card &&
+                    (selection as CalendarSelection.Card).cardId == card.id
+                CardLegendToggle(
                     card = card,
-                    isSelected = selection is CalendarSelection.Card &&
-                        (selection as CalendarSelection.Card).cardId == card.id,
-                    onClick = { toggleSelection(CalendarSelection.Card(card.id), selection, onSelectionChange) },
+                    isSelected = isSelected,
+                    isDarkTheme = darkTheme,
+                    shapes = connectedLegendShapes(index = index, count = cards.size),
+                    onClick = {
+                        toggleSelection(CalendarSelection.Card(card.id), selection, onSelectionChange)
+                    },
                 )
             }
         }
 
         LegendSection(title = stringResource(R.string.calendar_legend_billing_periods)) {
-            billingPeriods.forEach { period ->
-                SelectableChip(
-                    isSelected = selection is CalendarSelection.BillingPeriod &&
-                        (selection as CalendarSelection.BillingPeriod).periodId == period.id,
+            ConnectedLegendGroup(itemCount = billingPeriods.size) { index ->
+                val period = billingPeriods[index]
+                val isSelected = selection is CalendarSelection.BillingPeriod &&
+                    (selection as CalendarSelection.BillingPeriod).periodId == period.id
+                PeriodLegendToggle(
+                    isSelected = isSelected,
+                    shapes = connectedLegendShapes(index = index, count = billingPeriods.size),
                     onClick = {
-                        toggleSelection(CalendarSelection.BillingPeriod(period.id), selection, onSelectionChange)
+                        toggleSelection(
+                            CalendarSelection.BillingPeriod(period.id),
+                            selection,
+                            onSelectionChange,
+                        )
                     },
                 ) {
                     Column {
@@ -76,12 +95,14 @@ fun CalendarLegendRows(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
+                            val periodColor = period.cardColorHex.toComposeColor().adaptedCardAccent(darkTheme)
+                            val barShape = RoundedCornerShape(2.dp)
                             Box(
                                 modifier = Modifier
                                     .width(28.dp)
                                     .height(5.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(period.cardColorHex.toComposeColor().copy(alpha = 0.75f)),
+                                    .clip(barShape)
+                                    .background(periodColor.copy(alpha = 0.75f)),
                             )
                             Text(
                                 text = period.periodLabel,
@@ -93,7 +114,7 @@ fun CalendarLegendRows(
                         Text(
                             text = period.cardName,
                             style = MaterialTheme.typography.bodySmall,
-                            color = colors.secondaryText,
+                            color = MaterialTheme.cardsReminder.secondaryText,
                         )
                     }
                 }
@@ -101,12 +122,19 @@ fun CalendarLegendRows(
         }
 
         LegendSection(title = stringResource(R.string.calendar_legend_payments)) {
-            payments.forEach { period ->
-                SelectableChip(
-                    isSelected = selection is CalendarSelection.Payment &&
-                        (selection as CalendarSelection.Payment).periodId == period.id,
+            ConnectedLegendGroup(itemCount = payments.size) { index ->
+                val period = payments[index]
+                val isSelected = selection is CalendarSelection.Payment &&
+                    (selection as CalendarSelection.Payment).periodId == period.id
+                PeriodLegendToggle(
+                    isSelected = isSelected,
+                    shapes = connectedLegendShapes(index = index, count = payments.size),
                     onClick = {
-                        toggleSelection(CalendarSelection.Payment(period.id), selection, onSelectionChange)
+                        toggleSelection(
+                            CalendarSelection.Payment(period.id),
+                            selection,
+                            onSelectionChange,
+                        )
                     },
                 ) {
                     Column {
@@ -114,12 +142,12 @@ fun CalendarLegendRows(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
+                            val paymentColor = period.cardColorHex.toComposeColor().adaptedCardAccent(darkTheme)
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
                                     .clip(CircleShape)
-                                    .background(period.cardColorHex.toComposeColor())
-                                    .border(1.dp, Color.White, CircleShape),
+                                    .background(paymentColor),
                             )
                             Text(
                                 text = stringResource(R.string.payment_summary, period.paymentDateLabel),
@@ -135,13 +163,33 @@ fun CalendarLegendRows(
                                 period.periodLabel,
                             ),
                             style = MaterialTheme.typography.bodySmall,
-                            color = colors.secondaryText,
+                            color = MaterialTheme.cardsReminder.secondaryText,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ConnectedLegendGroup(
+    itemCount: Int,
+    modifier: Modifier = Modifier,
+    itemContent: @Composable (index: Int) -> Unit,
+) {
+    if (itemCount == 0) return
+
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+        verticalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+    ) {
+        repeat(itemCount) { index ->
+            itemContent(index)
         }
     }
 }
@@ -158,8 +206,7 @@ private fun LegendSection(
         Text(
             text = title,
             modifier = Modifier.padding(horizontal = 16.dp),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.labelLargeEmphasized,
             color = colors.secondaryText,
         )
         Row(
@@ -167,7 +214,6 @@ private fun LegendSection(
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             content()
         }
@@ -175,76 +221,81 @@ private fun LegendSection(
 }
 
 @Composable
-private fun CardTag(
+private fun CardLegendToggle(
     card: ApiCard,
     isSelected: Boolean,
+    isDarkTheme: Boolean,
+    shapes: androidx.compose.material3.ToggleButtonShapes,
     onClick: () -> Unit,
 ) {
-    val colors = MaterialTheme.cardsReminder
-    val cardColor = card.color
-    val tagShape = RoundedCornerShape(50)
+    val cardColor = card.color.adaptedCardAccent(isDarkTheme)
+    val dotShape = CircleShape
 
-    Row(
-        modifier = Modifier
-            .clip(tagShape)
-            .background(colors.calendarTagSurface)
-            .border(
-                width = 1.dp,
-                color = if (isSelected) cardColor.copy(alpha = 0.55f) else Color.Transparent,
-                shape = tagShape,
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(),
-                onClick = onClick,
-            )
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ToggleButton(
+        checked = isSelected,
+        onCheckedChange = { onClick() },
+        shapes = shapes,
+        colors = ToggleButtonDefaults.toggleButtonColors(
+            containerColor = MaterialTheme.cardsReminder.sheetItemSurface,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            checkedContainerColor = cardColor.copy(alpha = 0.14f),
+            checkedContentColor = cardColor,
+        ),
+        contentPadding = ButtonDefaults.TextButtonContentPadding,
     ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(cardColor),
-        )
-        Text(
-            text = card.name,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isSelected) cardColor else MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(dotShape)
+                    .background(cardColor),
+            )
+            Text(
+                text = card.name,
+                style = MaterialTheme.typography.labelLargeEmphasized,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
 @Composable
-private fun SelectableChip(
+private fun PeriodLegendToggle(
     isSelected: Boolean,
+    shapes: androidx.compose.material3.ToggleButtonShapes,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val colors = MaterialTheme.cardsReminder
-    val chipShape = RoundedCornerShape(12.dp)
-
-    Box(
-        modifier = Modifier
-            .clip(chipShape)
-            .background(colors.calendarTagSurface)
-            .border(
-                width = if (isSelected) 1.5.dp else 0.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                shape = chipShape,
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(),
-                onClick = onClick,
-            )
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ToggleButton(
+        checked = isSelected,
+        onCheckedChange = { onClick() },
+        shapes = shapes,
+        colors = ToggleButtonDefaults.toggleButtonColors(
+            containerColor = MaterialTheme.cardsReminder.sheetItemSurface,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
     ) {
         content()
+    }
+}
+
+@Composable
+private fun connectedLegendShapes(
+    index: Int,
+    count: Int,
+): androidx.compose.material3.ToggleButtonShapes {
+    return when {
+        count == 1 -> ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight)
+        index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+        index == count - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
     }
 }
 

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -105,7 +106,6 @@ fun TimelineScreen(
             paymentsRepository = application.paymentsRepository,
             cardsRepository = application.cardsRepository,
             onDismissRequest = viewModel::closePayments,
-            onEdit = viewModel::closePayments,
             onMarkPaidSuccess = viewModel::closePayments,
         )
     }
@@ -126,6 +126,7 @@ fun TimelineScreen(
             showFeeling = !state.isInitialLoading && state.summary != null,
             onFeelingClick = viewModel::openFeelingSheet,
         )
+        HorizontalDivider(color = colors.defaultBorder.copy(alpha = 0.6f))
 
         AppPullToRefreshBox(
             isRefreshing = state.isPullRefreshing,
@@ -222,8 +223,9 @@ fun TimelineScreen(
                                         Text(
                                             text = stringResource(section.titleRes),
                                             modifier = Modifier.padding(horizontal = 16.dp),
-                                            style = MaterialTheme.typography.titleMedium,
+                                            style = MaterialTheme.typography.labelLarge,
                                             fontWeight = FontWeight.SemiBold,
+                                            color = colors.secondaryText,
                                         )
                                     }
                                 }
@@ -317,8 +319,8 @@ private fun TimelineEmptyState(modifier: Modifier = Modifier) {
         )
         Text(
             text = stringResource(R.string.timeline_empty_title),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
         )
         Text(
             text = stringResource(R.string.timeline_empty_message),
@@ -351,8 +353,8 @@ private fun TimelineAllGoodState(modifier: Modifier = Modifier) {
         )
         Text(
             text = stringResource(R.string.timeline_all_good_title),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
         )
         Text(
             text = stringResource(R.string.timeline_all_good_message),

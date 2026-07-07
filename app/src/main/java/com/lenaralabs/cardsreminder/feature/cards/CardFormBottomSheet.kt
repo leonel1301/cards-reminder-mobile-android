@@ -68,10 +68,13 @@ fun CardFormBottomSheet(
     onActiveChange: (Boolean) -> Unit,
     onOwnerChange: (String?) -> Unit,
     onShowLastFourHelp: () -> Unit,
+    onShowBillingDayHelp: () -> Unit,
+    onShowPaymentDayHelp: () -> Unit,
     ownerDisplayName: (ApiOwner) -> String,
 ) {
     val colors = MaterialTheme.cardsReminder
     val isEditing = mode is CardsSheet.Edit
+    var expandedDayPicker by remember { mutableStateOf<DayPickerField?>(null) }
     val title = if (isEditing) {
         stringResource(R.string.screen_edit_card_title)
     } else {
@@ -183,6 +186,11 @@ fun CardFormBottomSheet(
                     label = stringResource(R.string.picker_billing_cycle_day),
                     value = formState.billingCycleDay,
                     onValueChange = onBillingDayChange,
+                    expanded = expandedDayPicker == DayPickerField.Billing,
+                    onExpandedChange = { expanded ->
+                        expandedDayPicker = if (expanded) DayPickerField.Billing else null
+                    },
+                    onShowHelp = onShowBillingDayHelp,
                 )
                 Text(
                     text = stringResource(R.string.period_start_preview, formState.periodStartPreview),
@@ -193,6 +201,11 @@ fun CardFormBottomSheet(
                     label = stringResource(R.string.picker_payment_due_day),
                     value = formState.paymentDueDay,
                     onValueChange = onPaymentDayChange,
+                    expanded = expandedDayPicker == DayPickerField.Payment,
+                    onExpandedChange = { expanded ->
+                        expandedDayPicker = if (expanded) DayPickerField.Payment else null
+                    },
+                    onShowHelp = onShowPaymentDayHelp,
                 )
             }
 
@@ -253,6 +266,11 @@ fun CardFormBottomSheet(
             }
         }
     }
+}
+
+private enum class DayPickerField {
+    Billing,
+    Payment,
 }
 
 @Composable

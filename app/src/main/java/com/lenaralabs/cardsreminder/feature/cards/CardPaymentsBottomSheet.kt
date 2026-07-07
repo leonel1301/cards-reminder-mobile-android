@@ -2,6 +2,7 @@ package com.lenaralabs.cardsreminder.feature.cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -9,12 +10,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,7 +61,6 @@ fun CardPaymentsBottomSheet(
     paymentsRepository: PaymentsRepository,
     cardsRepository: CardsRepository,
     onDismissRequest: () -> Unit,
-    onEdit: () -> Unit,
     onMarkPaidSuccess: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -193,12 +193,9 @@ fun CardPaymentsBottomSheet(
                 }
                 Text(
                     text = card.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                 )
-                TextButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.screen_edit_card_title))
-                }
+                Box(modifier = Modifier.size(48.dp))
             }
 
             if (isLoading && status == null) {
@@ -301,6 +298,12 @@ private fun PendingPaymentSection(
     onMarkPaidClick: () -> Unit,
 ) {
     val colors = MaterialTheme.cardsReminder
+    val markPaidButtonColors = ButtonDefaults.buttonColors(
+        containerColor = colors.primaryAction,
+        contentColor = androidx.compose.ui.graphics.Color.White,
+        disabledContainerColor = colors.primaryAction.copy(alpha = 0.6f),
+        disabledContentColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f),
+    )
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -387,22 +390,24 @@ private fun PendingPaymentSection(
                     minLines = 2,
                     maxLines = 4,
                 )
-                Button(
-                    onClick = onMarkPaidClick,
+                Box(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isMarkingPaid,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colors.primaryAction,
-                        contentColor = androidx.compose.ui.graphics.Color.White,
-                    ),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    if (isMarkingPaid) {
-                        AppInlineLoadingIndicator(
-                            size = 24.dp,
-                            color = androidx.compose.ui.graphics.Color.White,
-                        )
-                    } else {
-                        Text(stringResource(R.string.payments_mark_paid))
+                    Button(
+                        onClick = onMarkPaidClick,
+                        enabled = !isMarkingPaid,
+                        colors = markPaidButtonColors,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (isMarkingPaid) {
+                            AppInlineLoadingIndicator(
+                                size = 24.dp,
+                                color = androidx.compose.ui.graphics.Color.White,
+                            )
+                        } else {
+                            Text(stringResource(R.string.payments_mark_paid))
+                        }
                     }
                 }
             }

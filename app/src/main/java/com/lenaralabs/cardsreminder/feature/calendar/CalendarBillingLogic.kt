@@ -1,6 +1,9 @@
 package com.lenaralabs.cardsreminder.feature.calendar
 
 import com.lenaralabs.cardsreminder.core.model.ApiCard
+import com.lenaralabs.cardsreminder.core.model.ApiCardStatus
+import com.lenaralabs.cardsreminder.core.model.CardPaymentStatusKind
+import com.lenaralabs.cardsreminder.core.util.DateFormatUtils
 import java.text.DateFormatSymbols
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -54,6 +57,38 @@ sealed class CalendarSelection {
     data class BillingPeriod(val periodId: String) : CalendarSelection()
     data class Payment(val periodId: String) : CalendarSelection()
 }
+
+data class CalendarMonthInsights(
+    val paymentsThisMonth: Int = 0,
+    val billingPeriodsThisMonth: Int = 0,
+    val nextPayment: NextPaymentInfo? = null,
+    val isViewingCurrentMonth: Boolean = true,
+)
+
+data class NextPaymentInfo(
+    val cardId: String,
+    val cardName: String,
+    val cardColorHex: String,
+    val paymentDay: Int,
+    val paymentDateLabel: String,
+    val daysUntil: Int?,
+    val isPaid: Boolean,
+)
+
+enum class CalendarDayEventType(val sortOrder: Int) {
+    Payment(0),
+    PeriodStart(1),
+    PeriodEnd(2),
+    InPeriod(3),
+}
+
+data class CalendarDayEvent(
+    val type: CalendarDayEventType,
+    val cardName: String,
+    val cardColorHex: String,
+    val label: String,
+    val periodLabel: String,
+)
 
 object CalendarBillingLogic {
     private val locale: Locale get() = Locale.getDefault()
@@ -235,6 +270,137 @@ object CalendarBillingLogic {
         val calendar = calendarFor(year, month, 1)
         val format = SimpleDateFormat("MMMM yyyy", locale)
         return format.format(calendar.time)
+    }
+
+    fun isCurrentMonth(year: Int, month: Int, today: Calendar = Calendar.getInstance()): Boolean {
+        return today.get(Calendar.YEAR) == year && today.get(Calendar.MONTH) + 1 == month
+    }
+
+    fun buildMonthInsights(
+        year: Int,
+        month: Int,
+        visiblePayments: List<BillingPeriodInstance>,
+        visibleBillingPeriods: List<BillingPeriodInstance>,
+        cardStatuses: Map<String, com.lenaralabs.cardsreminder.core.model.ApiCardStatus>,
+        today: Calendar = Calendar.getInstance(),
+    ): CalendarMonthInsights {
+        val isViewingCurrentMonth = isCurrentMonth(year, month, today)
+        val todayDay = today.get(Calendar.DAY_OF_MONTH)
+
+        val sortedPayments = visiblePayments.sortedBy { it.paymentDay }
+        val nextPayment = when {
+            sortedPayments.isEmpty() -> null
+            isViewingCurrentMonth -> {
+                sortedPayments.firstOrNull { it.paymentDay >= todayDay }
+                    ?: sortedPayments.last()
+            }
+            else -> sortedPayments.first()
+        }
+
+        val nextPaymentInfo = nextPayment?.let { payment ->
+            val daysUntil = if (isViewingCurrentMonth) payment.paymentDay - todayDay else null
+            NextPaymentInfo(
+                cardId = payment.cardId,
+                cardName = payment.cardName,
+                cardColorHex = payment.cardColorHex,
+                paymentDay = payment.paymentDay,
+                paymentDateLabel = payment.paymentDateLabel,
+                daysUntil = daysUntil,
+                isPaid = isPaymentPeriodPaid(
+                    period = payment,
+                    status = cardStatuses[payment.cardId],
+                ),
+            )
+        }
+
+        return CalendarMonthInsights(
+            paymentsThisMonth = visiblePayments.size,
+            billingPeriodsThisMonth = visibleBillingPeriods.size,
+            nextPayment = nextPaymentInfo,
+            isViewingCurrentMonth = isViewingCurrentMonth,
+        )
+    }
+
+    fun eventsOnDay(
+        day: Int,
+        year: Int,
+        month: Int,
+        activeCards: List<ApiCard>,
+        periodsByCardId: Map<String, List<BillingPeriodInstance>>,
+    ): List<CalendarDayEvent> {
+        return activeCards.flatMap { card ->
+            val cardPeriods = periodsByCardId[card.id].orEmpty()
+            cardPeriods.mapNotNull { period ->
+                when {
+                    isPaymentDay(period, year, month, day) -> CalendarDayEvent(
+                        type = CalendarDayEventType.Payment,
+                        cardName = card.name,
+                        cardColorHex = card.displayColorHex,
+                        label = period.paymentDateLabel,
+                        periodLabel = period.periodLabel,
+                    )
+                    isPeriodSegmentStart(period, year, month, day) -> CalendarDayEvent(
+                        type = CalendarDayEventType.PeriodStart,
+                        cardName = card.name,
+                        cardColorHex = card.displayColorHex,
+                        label = period.periodLabel,
+                        periodLabel = period.periodLabel,
+                    )
+                    isPeriodSegmentEnd(period, year, month, day, daysInMonth(year, month)) -> CalendarDayEvent(
+                        type = CalendarDayEventType.PeriodEnd,
+                        cardName = card.name,
+                        cardColorHex = card.displayColorHex,
+                        label = period.periodLabel,
+                        periodLabel = period.periodLabel,
+                    )
+                    else -> null
+                }
+            }
+        }.distinctBy { "${it.cardName}-${it.type}-${it.periodLabel}" }
+            .sortedWith(
+                compareBy<CalendarDayEvent> { it.type.sortOrder }
+                    .thenBy { it.cardName.lowercase(locale) },
+            )
+    }
+
+    fun isPaymentPeriodPaid(
+        period: BillingPeriodInstance,
+        status: ApiCardStatus?,
+    ): Boolean {
+        if (status == null) return false
+
+        if (isSameBillingPeriod(period, status)) {
+            return status.isPaidThisCycle || status.kind == CardPaymentStatusKind.Paid
+        }
+
+        if (periodEndsBeforeCycleStart(period, status)) {
+            return true
+        }
+
+        return false
+    }
+
+    private fun isSameBillingPeriod(period: BillingPeriodInstance, status: ApiCardStatus): Boolean {
+        val statusStart = DateFormatUtils.parseIsoDate(status.cycleStart) ?: return false
+        val statusEnd = DateFormatUtils.parseIsoDate(status.cycleEnd) ?: return false
+        val periodStart = calendarFor(period.startYear, period.startMonth, period.startDay)
+        val periodEnd = calendarFor(period.endYear, period.endMonth, period.endDay)
+        val statusStartCal = Calendar.getInstance().apply { time = statusStart }
+        val statusEndCal = Calendar.getInstance().apply { time = statusEnd }
+        return sameCalendarDay(periodStart, statusStartCal) &&
+            sameCalendarDay(periodEnd, statusEndCal)
+    }
+
+    private fun periodEndsBeforeCycleStart(period: BillingPeriodInstance, status: ApiCardStatus): Boolean {
+        val cycleStart = DateFormatUtils.parseIsoDate(status.cycleStart) ?: return false
+        val cycleStartCal = Calendar.getInstance().apply { time = cycleStart }
+        val periodEndCal = calendarFor(period.endYear, period.endMonth, period.endDay)
+        return periodEndCal.before(cycleStartCal)
+    }
+
+    private fun sameCalendarDay(first: Calendar, second: Calendar): Boolean {
+        return first.get(Calendar.YEAR) == second.get(Calendar.YEAR) &&
+            first.get(Calendar.DAY_OF_YEAR) == second.get(Calendar.DAY_OF_YEAR)
     }
 
     private fun calendarFor(year: Int, month: Int, day: Int): Calendar {

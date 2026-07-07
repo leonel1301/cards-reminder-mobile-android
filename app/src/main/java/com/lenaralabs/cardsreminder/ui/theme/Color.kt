@@ -9,7 +9,7 @@ val AuthBackgroundLight = Color(0xFFECECEC)
 val AuthBackgroundDark = Color(0xFF0D1021)
 
 // Brand indigo — mark as paid, auth CTAs, onboarding accents.
-val BrandPrimaryLight = Color(0xFF5046E5)
+val BrandPrimaryLight = Color(0xFF4F46E5)
 val BrandPrimaryDark = Color(0xFF6366F1)
 
 // Add card / add owner — same indigo in light and dark.

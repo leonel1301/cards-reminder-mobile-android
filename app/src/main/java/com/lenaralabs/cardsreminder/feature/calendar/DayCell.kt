@@ -2,6 +2,7 @@ package com.lenaralabs.cardsreminder.feature.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,11 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lenaralabs.cardsreminder.ui.theme.adaptedCardAccent
+import com.lenaralabs.cardsreminder.ui.theme.isDarkTheme
 
 data class CardBarDisplay(
     val cardId: String,
@@ -39,20 +41,28 @@ fun DayCell(
     day: Int,
     isToday: Boolean,
     bars: List<CardBarDisplay>,
+    isSelected: Boolean = false,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     Column(
-        modifier = modifier.height(52.dp),
+        modifier = modifier
+            .height(52.dp)
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
                 .size(28.dp)
                 .then(
-                    if (isToday) {
-                        Modifier.background(Color(0xFF007AFF), CircleShape)
-                    } else {
-                        Modifier
+                    when {
+                        isToday -> Modifier.background(Color(0xFF007AFF), CircleShape)
+                        isSelected -> Modifier
+                            .border(1.5.dp, colorScheme.primary, CircleShape)
+                            .background(colorScheme.primaryContainer.copy(alpha = 0.45f), CircleShape)
+                        else -> Modifier
                     },
                 ),
             contentAlignment = Alignment.Center,
@@ -60,8 +70,12 @@ fun DayCell(
             Text(
                 text = day.toString(),
                 fontSize = 12.sp,
-                fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isToday) Color.White else MaterialTheme.colorScheme.onBackground,
+                fontWeight = if (isToday || isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                color = when {
+                    isToday -> Color.White
+                    isSelected -> colorScheme.onPrimaryContainer
+                    else -> colorScheme.onBackground
+                },
             )
         }
 
@@ -77,20 +91,23 @@ fun DayCell(
 
 @Composable
 private fun BarRow(bar: CardBarDisplay) {
+    val darkTheme = isDarkTheme()
+    val accentColor = bar.color.adaptedCardAccent(darkTheme)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(5.dp),
+            .height(6.dp),
         contentAlignment = Alignment.Center,
     ) {
         if (bar.showBar) {
             val shape = periodBarShape(bar.isPeriodStart, bar.isPeriodEnd)
-            val barColor = bar.color.copy(alpha = barOpacity(bar))
+            val barColor = accentColor.copy(alpha = barOpacity(bar))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(5.dp)
+                    .height(6.dp)
                     .padding(
                         start = if (bar.isPeriodStart) 2.dp else 0.dp,
                         end = if (bar.isPeriodEnd) 2.dp else 0.dp,
@@ -99,7 +116,7 @@ private fun BarRow(bar: CardBarDisplay) {
                     .background(barColor)
                     .then(
                         if (bar.barHighlighted) {
-                            Modifier.border(1.5.dp, bar.color, shape)
+                            Modifier.border(1.5.dp, accentColor.copy(alpha = 0.95f), shape)
                         } else {
                             Modifier
                         },
@@ -108,36 +125,28 @@ private fun BarRow(bar: CardBarDisplay) {
         }
 
         if (bar.showPaymentPin) {
-            val pinSize = if (bar.pinHighlighted) 10.dp else 8.dp
+            val pinSize = if (bar.pinHighlighted) 8.dp else 6.dp
+            val pinAlpha = if (bar.isDimmed) 0.3f else 1f
+
             Box(
                 modifier = Modifier
                     .size(pinSize)
-                    .shadow(
-                        elevation = if (bar.pinHighlighted) 3.dp else 0.dp,
-                        shape = CircleShape,
-                        spotColor = bar.color.copy(alpha = 0.45f),
-                    )
                     .clip(CircleShape)
-                    .background(bar.color.copy(alpha = if (bar.isDimmed) 0.25f else 1f))
-                    .border(
-                        width = if (bar.pinHighlighted) 2.dp else 1.5.dp,
-                        color = Color.White,
-                        shape = CircleShape,
-                    ),
+                    .background(accentColor.copy(alpha = pinAlpha)),
             )
         }
     }
 }
 
 private fun barOpacity(bar: CardBarDisplay): Float {
-    if (bar.isDimmed) return 0.12f
-    if (bar.barHighlighted) return 0.75f
-    return 0.35f
+    if (bar.isDimmed) return 0.15f
+    if (bar.barHighlighted) return 0.85f
+    return 0.45f
 }
 
 private fun periodBarShape(isStart: Boolean, isEnd: Boolean) = RoundedCornerShape(
-    topStart = if (isStart) 2.5.dp else 0.dp,
-    bottomStart = if (isStart) 2.5.dp else 0.dp,
-    topEnd = if (isEnd) 2.5.dp else 0.dp,
-    bottomEnd = if (isEnd) 2.5.dp else 0.dp,
+    topStart = if (isStart) 4.dp else 0.dp,
+    bottomStart = if (isStart) 4.dp else 0.dp,
+    topEnd = if (isEnd) 4.dp else 0.dp,
+    bottomEnd = if (isEnd) 4.dp else 0.dp,
 )

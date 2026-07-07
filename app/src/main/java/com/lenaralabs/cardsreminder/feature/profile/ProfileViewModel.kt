@@ -38,7 +38,6 @@ sealed class ProfileSheet {
 data class OwnerFormState(
     val name: String = "",
     val salaryDaySelection: Int = 0,
-    val isDirty: Boolean = false,
 ) {
     val canSave: Boolean get() = name.trim().isNotEmpty()
     val salaryDay: Int? get() = if (salaryDaySelection == 0) null else salaryDaySelection
@@ -65,7 +64,6 @@ data class ProfileUiState(
     val pendingDeleteFeedback: ApiFeedback? = null,
     val ownerFormState: OwnerFormState = OwnerFormState(),
     val feedbackFormState: FeedbackFormState = FeedbackFormState(),
-    val showDiscardOwnerDialog: Boolean = false,
     val showDiscardFeedbackDialog: Boolean = false,
     val initialLoadComplete: Boolean = false,
     val isPullRefreshing: Boolean = false,
@@ -86,7 +84,6 @@ data class ProfileUiState(
         private val pendingDeleteFeedback = MutableStateFlow<ApiFeedback?>(null)
         private val ownerFormState = MutableStateFlow(OwnerFormState())
         private val feedbackFormState = MutableStateFlow(FeedbackFormState())
-        private val showDiscardOwnerDialog = MutableStateFlow(false)
         private val showDiscardFeedbackDialog = MutableStateFlow(false)
         private val initialLoadComplete = MutableStateFlow(false)
         private val isPullRefreshing = MutableStateFlow(false)
@@ -126,15 +123,13 @@ data class ProfileUiState(
                         pendingDeleteFeedback,
                         ownerFormState,
                         feedbackFormState,
-                        showDiscardOwnerDialog,
                         showDiscardFeedbackDialog,
-                    ) { deleteFeedback, ownerForm, feedbackForm, discardOwner, discardFeedback ->
+                    ) { deleteFeedback, ownerForm, feedbackForm, discardFeedback ->
                         ProfileUiSnapshot2(
                             deleteFeedback,
                             ownerForm,
                             feedbackForm,
-                            discardOwner,
-                            discardFeedback
+                            discardFeedback,
                         )
                     },
                     combine(
@@ -158,7 +153,6 @@ data class ProfileUiState(
                         pendingDeleteFeedback = ui2.deleteFeedback,
                         ownerFormState = ui2.ownerForm,
                         feedbackFormState = ui2.feedbackForm,
-                        showDiscardOwnerDialog = ui2.discardOwner,
                         showDiscardFeedbackDialog = ui2.discardFeedback,
                         initialLoadComplete = loadState.first,
                         isPullRefreshing = loadState.second,
@@ -205,7 +199,6 @@ data class ProfileUiState(
             val deleteFeedback: ApiFeedback?,
             val ownerForm: OwnerFormState,
             val feedbackForm: FeedbackFormState,
-            val discardOwner: Boolean,
             val discardFeedback: Boolean,
         )
 
@@ -274,11 +267,7 @@ data class ProfileUiState(
         }
 
         fun requestDismissOwnerSheet() {
-            if (ownerFormState.value.isDirty) {
-                showDiscardOwnerDialog.value = true
-            } else {
-                closeSheet()
-            }
+            closeSheet()
         }
 
         fun requestDismissFeedbackForm() {
@@ -289,18 +278,12 @@ data class ProfileUiState(
             }
         }
 
-        fun confirmDiscardOwner() {
-            showDiscardOwnerDialog.value = false
-            closeSheet()
-        }
-
         fun confirmDiscardFeedback() {
             showDiscardFeedbackDialog.value = false
             closeFeedbackForm()
         }
 
-        fun dismissDiscardDialogs() {
-            showDiscardOwnerDialog.value = false
+        fun dismissDiscardFeedbackDialog() {
             showDiscardFeedbackDialog.value = false
         }
 
@@ -323,7 +306,7 @@ data class ProfileUiState(
         }
 
         fun updateOwnerForm(transform: (OwnerFormState) -> OwnerFormState) {
-            ownerFormState.value = transform(ownerFormState.value.copy(isDirty = true))
+            ownerFormState.value = transform(ownerFormState.value)
         }
 
         fun updateFeedbackForm(transform: (FeedbackFormState) -> FeedbackFormState) {

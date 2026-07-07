@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,7 +45,7 @@ import com.lenaralabs.cardsreminder.R
 import com.lenaralabs.cardsreminder.ui.animation.AppMotion
 import com.lenaralabs.cardsreminder.ui.animation.RevealStyle
 import com.lenaralabs.cardsreminder.ui.animation.SmoothReveal
-import com.lenaralabs.cardsreminder.ui.components.AppExtendedFab
+import com.lenaralabs.cardsreminder.ui.components.AppCardsFabMenu
 import com.lenaralabs.cardsreminder.ui.components.AppInlineLoadingIndicator
 import com.lenaralabs.cardsreminder.ui.components.AppPullToRefreshBox
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
@@ -68,6 +67,7 @@ fun CardsScreen(
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val owners by viewModel.owners.collectAsStateWithLifecycle()
+    val notificationState by application.pushNotificationManager.state.collectAsStateWithLifecycle()
     val colors = MaterialTheme.cardsReminder
     val selfOwnerFormat = stringResource(R.string.owner_self_format)
 
@@ -163,12 +163,12 @@ fun CardsScreen(
                             val isMarkingPaid = state.markingPaidCardId == card.id
                             val scale by animateFloatAsState(
                                 targetValue = if (isDeleting) 0.92f else 1f,
-                                animationSpec = tween(AppMotion.BASE_DURATION_MS),
+                                animationSpec = AppMotion.expressiveFastSpatialSpring,
                                 label = "deleteScale",
                             )
                             val alpha by animateFloatAsState(
                                 targetValue = if (isDeleting) 0f else 1f,
-                                animationSpec = tween(AppMotion.BASE_DURATION_MS),
+                                animationSpec = AppMotion.expressiveFastEffectsSpring,
                                 label = "deleteAlpha",
                             )
 
@@ -234,15 +234,15 @@ fun CardsScreen(
         }
         }
 
-        AppExtendedFab(
-            onClick = viewModel::openCreate,
+        AppCardsFabMenu(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
+            onAddCard = viewModel::openCreate,
+            onEnableReminders = ::requestEnableReminders,
+            showRemindersAction = !notificationState.isPreferenceEnabled || !notificationState.isAuthorized,
             containerColor = colors.addActionButton,
             contentColor = colors.onAddActionButton,
-            icon = Icons.Filled.Add,
-            text = { Text(stringResource(R.string.action_add_card)) },
         )
     }
 
@@ -273,6 +273,8 @@ fun CardsScreen(
                 onActiveChange = { value -> viewModel.updateForm { it.copy(isActive = value) } },
                 onOwnerChange = { value -> viewModel.updateForm { it.copy(selectedOwnerId = value) } },
                 onShowLastFourHelp = viewModel::showLastFourHelp,
+                onShowBillingDayHelp = viewModel::showBillingDayHelp,
+                onShowPaymentDayHelp = viewModel::showPaymentDayHelp,
                 ownerDisplayName = { owner ->
                     viewModel.ownerDisplayName(owner, selfOwnerFormat)
                 },
@@ -285,7 +287,6 @@ fun CardsScreen(
                 paymentsRepository = application.paymentsRepository,
                 cardsRepository = application.cardsRepository,
                 onDismissRequest = viewModel::closeSheetCompletely,
-                onEdit = { viewModel.editFromPayments(sheet.card) },
                 onMarkPaidSuccess = viewModel::closeSheetCompletely,
             )
         }
@@ -368,6 +369,32 @@ fun CardsScreen(
         )
     }
 
+    if (state.showBillingDayHelp) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissBillingDayHelp,
+            title = { Text(stringResource(R.string.picker_billing_cycle_day_help_title)) },
+            text = { Text(stringResource(R.string.picker_billing_cycle_day_help_message)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissBillingDayHelp) {
+                    Text(stringResource(R.string.action_ok))
+                }
+            },
+        )
+    }
+
+    if (state.showPaymentDayHelp) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissPaymentDayHelp,
+            title = { Text(stringResource(R.string.picker_payment_due_day_help_title)) },
+            text = { Text(stringResource(R.string.picker_payment_due_day_help_message)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissPaymentDayHelp) {
+                    Text(stringResource(R.string.action_ok))
+                }
+            },
+        )
+    }
+
     if (state.showRemindersPrompt) {
         AlertDialog(
             onDismissRequest = viewModel::dismissRemindersPrompt,
@@ -412,8 +439,7 @@ private fun CardsEmptyState() {
     ) {
         Text(
             text = stringResource(R.string.cards_empty_title),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.titleLargeEmphasized,
             textAlign = TextAlign.Center,
         )
         Text(

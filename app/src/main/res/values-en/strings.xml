@@ -50,6 +50,22 @@
     <string name="calendar_legend_cards">Cards</string>
     <string name="calendar_legend_billing_periods">Billing periods</string>
     <string name="calendar_legend_payments">Payments this month</string>
+    <string name="calendar_insights_payments">%1$d payments this month</string>
+    <string name="calendar_insights_payment_today">%1$s pays today</string>
+    <string name="calendar_insights_payment_in_days">In %1$d days · %2$s</string>
+    <string name="calendar_insights_payment_on">%1$s · %2$s</string>
+    <string name="calendar_insights_payment_overdue">Overdue · %1$s (%2$s)</string>
+    <string name="calendar_insights_paid">Paid</string>
+    <string name="calendar_today_button">Today</string>
+    <string name="calendar_day_detail_title">Day %1$d</string>
+    <string name="calendar_day_detail_empty">No billing periods or payments on this day.</string>
+    <string name="calendar_day_event_payment">Payment — %1$s</string>
+    <string name="calendar_day_event_period_start">Period starts — %1$s</string>
+    <string name="calendar_day_event_period_end">Period ends — %1$s</string>
+    <string name="calendar_day_event_in_period">In billing period — %1$s</string>
+    <string name="calendar_mini_legend_period">Period</string>
+    <string name="calendar_mini_legend_payment">Payment</string>
+    <string name="calendar_clear_selection">Close</string>
     <string name="payment_summary">Payment %1$s</string>
     <string name="payment_detail_format">%1$s · %2$s</string>
 
@@ -98,7 +114,11 @@
     <string name="field_notes_optional">Notes (optional)</string>
     <string name="field_card_active">Active card</string>
     <string name="picker_billing_cycle_day">Last billing day</string>
+    <string name="picker_billing_cycle_day_help_title">Last billing day</string>
+    <string name="picker_billing_cycle_day_help_message">This is your card\'s statement closing date—the last day charges count toward that billing period. You\'ll find it on your statement or banking app, often labeled \"statement date\" or \"closing date\".</string>
     <string name="picker_payment_due_day">Payment day</string>
+    <string name="picker_payment_due_day_help_title">Payment due day</string>
+    <string name="picker_payment_due_day_help_message">This is the deadline to pay without interest. Look for it on your statement as \"payment due date\" or \"due date\".</string>
     <string name="period_start_preview">Billing period starts on day %1$d in the calendar</string>
     <string name="owner_self_format">%1$s (you)</string>
     <string name="form_discard_title">Discard changes?</string>

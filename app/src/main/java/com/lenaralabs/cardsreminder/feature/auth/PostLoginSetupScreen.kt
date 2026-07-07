@@ -3,7 +3,6 @@ package com.lenaralabs.cardsreminder.feature.auth
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +52,7 @@ import com.lenaralabs.cardsreminder.core.analytics.TrackScreen
 import com.lenaralabs.cardsreminder.ui.components.PoweredByLenaraFooter
 import com.lenaralabs.cardsreminder.ui.animation.pressScaleEffect
 import com.lenaralabs.cardsreminder.ui.theme.cardsReminder
+import com.lenaralabs.cardsreminder.ui.theme.isDarkTheme
 import kotlinx.coroutines.delay
 
 @Composable
@@ -66,7 +66,7 @@ fun PostLoginSetupScreen(
 ) {
     TrackScreen(AnalyticsScreens.POST_LOGIN_SETUP)
     val colors = MaterialTheme.cardsReminder
-    val isDarkTheme = isSystemInDarkTheme()
+    val darkTheme = isDarkTheme()
     val sessionState by viewModel.sessionState.collectAsStateWithLifecycle()
 
     var messageIndex by remember { mutableIntStateOf(0) }
@@ -113,7 +113,7 @@ fun PostLoginSetupScreen(
         stringResource(R.string.post_login_welcome_ready),
     )
 
-    AuthGradientBackground(isDarkTheme = isDarkTheme, modifier = modifier) {
+    AuthGradientBackground(isDarkTheme = darkTheme, modifier = modifier) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier

@@ -50,6 +50,22 @@
     <string name="calendar_legend_cards">Tarjetas</string>
     <string name="calendar_legend_billing_periods">Periodos de facturación</string>
     <string name="calendar_legend_payments">Pagos del mes</string>
+    <string name="calendar_insights_payments">%1$d pagos este mes</string>
+    <string name="calendar_insights_payment_today">Hoy paga %1$s</string>
+    <string name="calendar_insights_payment_in_days">En %1$d días · %2$s</string>
+    <string name="calendar_insights_payment_on">%1$s · %2$s</string>
+    <string name="calendar_insights_payment_overdue">Vencido · %1$s (%2$s)</string>
+    <string name="calendar_insights_paid">Pagado</string>
+    <string name="calendar_today_button">Hoy</string>
+    <string name="calendar_day_detail_title">Día %1$d</string>
+    <string name="calendar_day_detail_empty">Sin periodos ni pagos en este día.</string>
+    <string name="calendar_day_event_payment">Pago — %1$s</string>
+    <string name="calendar_day_event_period_start">Inicio de periodo — %1$s</string>
+    <string name="calendar_day_event_period_end">Cierre de periodo — %1$s</string>
+    <string name="calendar_day_event_in_period">En periodo — %1$s</string>
+    <string name="calendar_mini_legend_period">Periodo</string>
+    <string name="calendar_mini_legend_payment">Pago</string>
+    <string name="calendar_clear_selection">Cerrar</string>
     <string name="payment_summary">Pago %1$s</string>
     <string name="payment_detail_format">%1$s · %2$s</string>
 
@@ -98,7 +114,11 @@
     <string name="field_notes_optional">Notas (opcional)</string>
     <string name="field_card_active">Tarjeta activa</string>
     <string name="picker_billing_cycle_day">Último día de facturación</string>
+    <string name="picker_billing_cycle_day_help_title">Último día de facturación</string>
+    <string name="picker_billing_cycle_day_help_message">Es el día de corte de tu tarjeta: el último día en que se registran cargos de ese periodo. Lo encuentras en el estado de cuenta o la app del banco, suele aparecer como \"fecha de corte\" o \"día de cierre\".</string>
     <string name="picker_payment_due_day">Día de pago</string>
+    <string name="picker_payment_due_day_help_title">Día de pago</string>
+    <string name="picker_payment_due_day_help_message">Es la fecha límite para pagar sin generar intereses. Aparece en tu estado de cuenta como \"fecha de pago\" o \"vencimiento\".</string>
     <string name="period_start_preview">Inicio del periodo en calendario: día %1$d</string>
     <string name="owner_self_format">%1$s (tú)</string>
     <string name="form_discard_title">¿Descartar cambios?</string>

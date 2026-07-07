@@ -55,12 +55,12 @@ fun SplashScreen(
 
     val logoScale by animateFloatAsState(
         targetValue = if (contentVisible) 1f else 0.85f,
-        animationSpec = AppMotion.splashSpring,
+        animationSpec = AppMotion.expressiveSlowSpatialSpring,
         label = "logoScale",
     )
     val logoAlpha by animateFloatAsState(
         targetValue = if (contentVisible) 1f else 0f,
-        animationSpec = AppMotion.splashSpring,
+        animationSpec = AppMotion.expressiveSlowSpatialSpring,
         label = "logoAlpha",
     )
     val contentAlpha by animateFloatAsState(
